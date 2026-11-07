@@ -8,12 +8,17 @@ Model: Qwen2.5-1.5B-Instruct (aligned) / Qwen2.5-1.5B (base). Drift: LoRA on 2k 
 |---|---|---|
 | 0 | `s00_baseline.py` | instruct vs base evals |
 | 1 | `s01_finetune.py` | GSM8K LoRA -> drifted model (saved to `outputs/models/`, gitignored) |
-| 2 | `s02_locate.py`, `circuits.py` | own refusal-direction analysis (written, **not yet run**) |
+| 2 | `s02_locate.py`, `circuits.py` | refusal-direction analysis: per-layer direction, AUC, causal ablate/add (instruct vs drifted) |
 | 3 | `s03_safetune_resta.py` | SafeTune `ReStaTrainer`, alpha sweep |
 | 4 | `s04_safetune_methods.py` | SafeTune WiSE-FT, task arithmetic, Safe LoRA, SafeDelta, safety-vector restore, C-dTheta, SafeMerge |
-| 5 | `s05_compile.py` | `outputs/results_table.md`, `outputs/tradeoff.png` |
+| 5 | `s05_compile.py` | first-pass table/plot (small eval sets) |
+| 6 | `s06_targeted.py` | conditional / unconditional refusal steering and refusal weight patch (first pass) |
+| 7 | `s07_final.py` | final six-metric eval with per-item flags and Wilson CIs -> `outputs/final/*.json` |
+| 8 | `s08_report.py` | builds `paper/figures/*` and `paper/table_main.tex` from `outputs/` |
 
-`repair.py` holds hand-written Safe LoRA / ReSta / refusal-direction patch (not yet run; cross-check for stage 3-4).
+Paper: `paper/main.tex` (IEEEtran) -> `paper/main.pdf`. Build: `cd paper && pdflatex main && pdflatex main`.
+
+`repair.py` holds the refusal weight patch (used in stages 6-7); its hand-written Safe LoRA / ReSta were not run.
 
 Setup: `uv venv --python 3.12 .venv && uv pip install --python .venv/bin/python torch transformers peft datasets accelerate matplotlib safetune`.
 Data (public GitHub mirrors, not committed): AdvBench `llm-attacks/llm-attacks`, XSTest `paul-rottger/xstest`, refusal-direction splits `andyrdt/refusal_direction` -> `data/`.

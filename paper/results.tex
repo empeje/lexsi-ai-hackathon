@@ -1,0 +1,44 @@
+\section{Results}
+\subsection{Fine-tuning on math erodes refusal}
+Table~\ref{tab:main} gives all six metrics for every model. The GSM8K fine-tune lowers refusal on harmful prompts from 93.5\% to 59.5\% and on XSTest's unsafe prompts from 98.5\% to 55.0\%; AdvBench refusal falls from 100\% to 90.0\%. Refusal of ordinary harmless prompts is not raised (8.0\% to 2.7\%), so the drift is a loss of caution, not a change in helpfulness. GSM8K accuracy is unchanged (51.3\% to 50.7\%): the fine-tune did not improve the task within our budget, which limits what ``preserving task performance'' can mean here (Section~\ref{sec:limits}). The aligned model refuses about half (50.8\%) of XSTest's safe look-alike prompts but only 8.0\% of plain harmless prompts, so the two over-refusal columns measure different things.
+
+\begin{table*}[t]
+\centering
+\caption{Refusal rates and GSM8K accuracy (\%), with 95\% Wilson intervals in brackets. Higher is better for the first three columns and GSM8K; lower is better for the XSTest-safe and Harmless columns. Sample sizes: 200, 100, 200, 250, 150, 150. ``(ours)'' marks methods that use the located refusal direction.}
+\label{tab:main}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\input{table_main}
+\end{table*}
+
+\subsection{Where refusal lives}
+Figure~\ref{fig:locate} summarises the localisation. In the aligned model the projection onto $\hat r_l$ separates harmful from harmless validation prompts with AUC $\approx$ 1 from layer 12 onward (0.99 at layer 9). The causal test shows a sharp transition between layers 10 and 14: ablating the direction taken from layer 10 still leaves 80\% refusal, from layer 14 only 3\%. Directions taken from layers 4--8 leave refusal intact when ablated (95--97\% of harmful prompts still refused) and do not induce refusal when added (3--5\%); from layer 14 on, ablating the direction cuts refusal of harmful prompts to 2--15\% and adding it makes the model refuse 90--100\% of harmless prompts (60 prompts per condition). Refusal is therefore carried by a single direction in roughly layers 14--24, which we use as the repair band $\mathcal L$.
+
+Drift leaves this structure largely in place. In the drifted model the harmful-versus-harmless AUC is still near 1, but the gap along the direction shrinks: at layer 26 it is 43.8 versus 66.5 in the aligned model (34\% smaller). The direction also rotates, with cosine similarity between the two models' directions between 0.62 and 0.96 across layers (lowest at layer 7). The model still separates the two kinds of prompt; the push towards refusing is weaker.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/locate.pdf}
+\caption{Left: harmful-versus-harmless gap along $\hat r_l$ in the aligned and drifted models. Middle: causal test on the aligned model (60 prompts per point); directional ablation removes refusal and activation addition induces it from layer 14 on. Right: cosine similarity between the two models' directions.}
+\label{fig:locate}
+\end{figure*}
+
+\subsection{Training-free repairs}
+Figure~\ref{fig:tradeoff} plots safety (mean refusal over the three harmful sets) against both over-refusal measures.
+\paragraph{Weight-space methods.} ReSta, task arithmetic, WiSE-FT and Safe LoRA are gentle: they raise harmful-prompt refusal to 76.0--82.5\% and XSTest-unsafe refusal to 66.5--78.5\% while plain-harmless over-refusal stays at 4.0--5.3\%. SafeDelta and safety-vector restore go further, to 93.0\% and 92.5\% on harmful prompts and 95.5\% and 97.5\% on XSTest-unsafe, close to the aligned model. Their look-alike over-refusal rises with refusal (32.8\% and 43.6\%, against 50.8\% for the aligned model), and plain-harmless over-refusal is 6.7\% for both. C-$\Delta\Theta$ sits in between (89.5\% harmful, 83.0\% unsafe). SafeMerge, tried in an earlier smaller pass, left the drifted model unchanged. Across these methods, more recovered refusal comes with more look-alike over-refusal.
+
+\paragraph{Math accuracy.} GSM8K intervals are about $\pm$8 points wide, so most differences are not resolvable. SafeDelta (42.0\%) and C-$\Delta\Theta$ (40.0\%) have the lowest point estimates and ReSta is at 44.7\%, but all overlap with the drifted model's 50.7\%; safety-vector restore (54.7\%) and WiSE-FT (52.7\%) are at or above it. The only clear break is unconditional steering (0.0\%, interval [0,2]).
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/tradeoff.pdf}
+\caption{Safety versus over-refusal for the aligned model, the drifted model and each repair. Marker size grows with GSM8K accuracy; bars are 95\% Wilson intervals. Unconditional steering (98\% plain-harmless over-refusal) is omitted for scale and listed in Table~\ref{tab:main}.}
+\label{fig:tradeoff}
+\end{figure*}
+
+\subsection{Repairs that use the located direction}
+\paragraph{Refusal weight patch: negative result.} Undoing the fine-tune's change along $\hat r_l$ at the residual-write matrices of layers 14--24 recovers almost nothing: 61.0\% harmful-prompt refusal versus 59.5\% for the drifted model (and 65\% with $\beta{=}2$ in an earlier smaller run), with no change in over-refusal or math. The drift is therefore not stored mainly in how those layers write along the direction; it lies elsewhere, for example in how earlier layers or the read side encode the prompt, or in other directions.
+
+\paragraph{Conditional steering.} Gated steering with the size set from the measured gap restores refusal to the aligned level: 96.5\% on harmful prompts, 96.0\% on AdvBench and 98.0\% on XSTest-unsafe. Plain-harmless over-refusal is 3.3\% [1,8], below the aligned model's 8.0\% [5,13], and GSM8K is 50.0\%. Against the best weight-space methods the evidence is comparability, not superiority: plain-harmless over-refusal for safety-vector restore is 6.7\% [4,12], an overlapping interval (five versus ten of 150 prompts), and the harmful-prompt refusal intervals overlap as well.
+\paragraph{The gate is essential.} The same push applied at every position refuses 98.5\% of harmful prompts but also 98.0\% of plain harmless prompts and 100\% of safe look-alikes, and solves no GSM8K problem (0.0\%). The detector, not the push, is what preserves normal behaviour.
+\paragraph{Look-alike prompts.} Conditional steering refuses 49.2\% of XSTest's safe look-alikes, matching the aligned model (50.8\%) and safety-vector restore (43.6\%). The direction appears to respond to harmful-looking content rather than harm itself. Steering therefore restores the aligned model's behaviour, including its look-alike weakness, and does not improve on it.

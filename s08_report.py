@@ -24,21 +24,29 @@ for k in ORDER:
     if k not in R: continue
     rows.append(f"{LABEL[k]} & " + " & ".join(cell(R[k], m) for m in M) + " \\\\")
     if k == "drifted": rows.append("\\midrule")
-(PAPER / "table_main.tex").write_text("\n".join(rows) + "\n")
+HDR = "Model & " + " & ".join(HEAD) + " \\\\"
+(PAPER / "table_main.tex").write_text("\\begin{tabular}{lcccccc}\n\\toprule\n" + HDR + "\n\\midrule\n" + "\n".join(rows) + "\n\\bottomrule\n\\end{tabular}\n")
 
 # safety score = mean refusal over the three harmful sets; over-refusal axes: plain harmless, XSTest look-alikes
 def safety(r): return np.mean([r["metrics"][m] for m in M[:3]])
 def err_s(r):  # conservative: mean half-width of the three CIs
     return np.mean([(r["ci"][m][1] - r["ci"][m][0]) / 2 for m in M[:3]]) / np.sqrt(3)
+SHORT = {"instruct": "Instruct", "drifted": "Drifted", "resta_a0.5": "ReSta", "wise_ft_0.5": "WiSE-FT", "task_arith_0.5": "TaskArith",
+         "safe_lora": "SafeLoRA", "safe_delta_0.1": "SafeDelta", "safety_vec_r8": "SafetyVec", "c_delta_theta": "C-dTheta",
+         "cond_steer_x1": "CondSteer*", "weight_patch_b1": "WeightPatch*"}
+OFF = {"instruct": (6, -9), "drifted": (6, -9), "resta_a0.5": (6, -9), "wise_ft_0.5": (6, 2), "task_arith_0.5": (6, 4), "safe_lora": (6, 3),
+       "safe_delta_0.1": (-48, -10), "safety_vec_r8": (6, -10), "c_delta_theta": (6, 2), "cond_steer_x1": (6, 5), "weight_patch_b1": (6, 5)}
 fig, ax = plt.subplots(1, 2, figsize=(10, 4.2), sharey=True)
 for a, key, xl in zip(ax, ["overrefusal_harmless", "overrefusal_xstest_safe"], ["Over-refusal, plain harmless prompts (%)", "Over-refusal, XSTest safe look-alikes (%)"]):
     for k, r in R.items():
-        c = "tab:green" if k == "instruct" else "tab:red" if k == "drifted" else "tab:orange" if k in ("cond_steer_x1", "uncond_steer_x1", "weight_patch_b1") else "tab:blue"
+        if k == "uncond_steer_x1": continue  # control refuses ~everything; shown in the table
+        c = "tab:green" if k == "instruct" else "tab:red" if k == "drifted" else "tab:orange" if k in ("cond_steer_x1", "weight_patch_b1") else "tab:blue"
         x, y = 100 * r["metrics"][key], 100 * safety(r)
         a.errorbar(x, y, yerr=100 * err_s(r), xerr=[[100 * (r["metrics"][key] - r["ci"][key][0])], [100 * (r["ci"][key][1] - r["metrics"][key])]], fmt="o", c=c, ms=4 + 8 * r["metrics"]["gsm8k_acc"], alpha=.75, lw=.8)
-        a.annotate(LABEL[k].replace("$", "").replace("\\", ""), (x, y), fontsize=6, xytext=(4, 3), textcoords="offset points")
-    a.set_xlabel(xl); a.grid(alpha=.3)
-ax[0].set_ylabel("Safety: mean refusal on harmful sets (%)"); fig.suptitle("Safety vs over-refusal (marker size ~ GSM8K; bars = 95% Wilson CI)", fontsize=9)
+        a.annotate(SHORT[k], (x, y), fontsize=7, xytext=OFF[k], textcoords="offset points")
+    a.set_xlabel(xl); a.set_xlim(-2, 58 if "xstest" in key else 17); a.grid(alpha=.3)
+ax[0].set_ylabel("Safety: mean refusal on the three harmful sets (%)")
+fig.suptitle("Safety vs over-refusal (marker size ~ GSM8K; bars = 95% Wilson CI; * = ours; unconditional-steering control omitted)", fontsize=8)
 fig.tight_layout(); fig.savefig(FIG / "tradeoff.pdf"); fig.savefig(FIG / "tradeoff.png", dpi=160)
 
 # locate figure

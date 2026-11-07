@@ -4,3 +4,9 @@ outputs/models/
 __pycache__/
 data/
 outputs/*.log
+paper/*.aux
+paper/*.log
+paper/*.out
+paper/*.toc
+paper/*.bbl
+paper/*.blg

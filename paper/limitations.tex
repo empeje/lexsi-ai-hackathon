@@ -1,0 +1,10 @@
+\label{sec:limits}
+\begin{itemize}
+\item \textbf{One model, one drift source, one seed.} All results are for Qwen2.5-1.5B-Instruct after a single GSM8K LoRA fine-tune. The fine-tune did not improve GSM8K accuracy, so we cannot show that repairs preserve a \emph{gained} skill, only that accuracy is not clearly changed.
+\item \textbf{Crude refusal detector.} Refusal is a phrase match in the first 200 characters, not a judged outcome. It can miss unusual refusals and count hedged compliance as refusal, and absolute levels (notably the aligned model's 50.8\% on XSTest-safe) should not be over-read. No guard model or human review was used.
+\item \textbf{Small evaluation sets.} With 100--250 prompts per metric the 95\% intervals span roughly 4 to 16 points (GSM8K about $\pm$8), so many comparisons are unresolved. We do not claim any ranking among methods whose intervals overlap.
+\item \textbf{Untuned, single settings.} Each method was run at one setting chosen without per-method tuning (the SafeTune defaults or our first choice), so the ranking depends on those choices. The repair band (layers 14--24) was chosen after inspecting the aligned model's causal test.
+\item \textbf{Aligned reference required.} Every repair uses the aligned model, and several also the base model, so they apply only when those weights exist.
+\item \textbf{No adversarial evaluation.} We test direct harmful requests only, not jailbreaks, multi-turn attacks, prompt injection or weight-space attacks. Greedy decoding only.
+\item \textbf{Toolkit coverage.} We used the SafeTune weight-space methods; we did not use SafeTune's own circuit or neuron finders, CircuitKIT, AuditKIT or CuratorKIT, and the localisation here is our own analysis.
+\end{itemize}

@@ -1,5 +1,19 @@
+\begin{tabular}{lcccccc}
+\toprule
+Model & Harmful & AdvBench & XSTest-unsafe & XSTest-safe & Harmless & GSM8K \\
+\midrule
 Instruct (aligned) & 93.5 \scriptsize{[89,96]} & 100.0 \scriptsize{[96,100]} & 98.5 \scriptsize{[96,99]} & 50.8 \scriptsize{[45,57]} & 8.0 \scriptsize{[5,13]} & 51.3 \scriptsize{[43,59]} \\
 Drifted (GSM8K LoRA) & 59.5 \scriptsize{[53,66]} & 90.0 \scriptsize{[83,94]} & 55.0 \scriptsize{[48,62]} & 3.2 \scriptsize{[2,6]} & 2.7 \scriptsize{[1,7]} & 50.7 \scriptsize{[43,59]} \\
 \midrule
 ReSta $\alpha$=0.5 & 82.0 \scriptsize{[76,87]} & 97.0 \scriptsize{[92,99]} & 73.5 \scriptsize{[67,79]} & 11.2 \scriptsize{[8,16]} & 5.3 \scriptsize{[3,10]} & 44.7 \scriptsize{[37,53]} \\
 WiSE-FT 0.5 & 76.0 \scriptsize{[70,81]} & 95.0 \scriptsize{[89,98]} & 66.5 \scriptsize{[60,73]} & 8.0 \scriptsize{[5,12]} & 4.7 \scriptsize{[2,9]} & 52.7 \scriptsize{[45,60]} \\
+Task arith. 0.5 & 82.5 \scriptsize{[77,87]} & 97.0 \scriptsize{[92,99]} & 73.0 \scriptsize{[66,79]} & 11.2 \scriptsize{[8,16]} & 4.7 \scriptsize{[2,9]} & 47.3 \scriptsize{[40,55]} \\
+Safe LoRA & 81.0 \scriptsize{[75,86]} & 99.0 \scriptsize{[95,100]} & 78.5 \scriptsize{[72,84]} & 14.0 \scriptsize{[10,19]} & 4.0 \scriptsize{[2,8]} & 48.0 \scriptsize{[40,56]} \\
+SafeDelta 0.1 & 93.0 \scriptsize{[89,96]} & 100.0 \scriptsize{[96,100]} & 95.5 \scriptsize{[92,98]} & 32.8 \scriptsize{[27,39]} & 6.7 \scriptsize{[4,12]} & 42.0 \scriptsize{[34,50]} \\
+Safety-vec. restore (r=8) & 92.5 \scriptsize{[88,95]} & 100.0 \scriptsize{[96,100]} & 97.5 \scriptsize{[94,99]} & 43.6 \scriptsize{[38,50]} & 6.7 \scriptsize{[4,12]} & 54.7 \scriptsize{[47,62]} \\
+C-$\Delta\Theta$ & 89.5 \scriptsize{[84,93]} & 100.0 \scriptsize{[96,100]} & 83.0 \scriptsize{[77,88]} & 25.2 \scriptsize{[20,31]} & 8.7 \scriptsize{[5,14]} & 40.0 \scriptsize{[33,48]} \\
+Cond. steering (ours) & 96.5 \scriptsize{[93,98]} & 96.0 \scriptsize{[90,98]} & 98.0 \scriptsize{[95,99]} & 49.2 \scriptsize{[43,55]} & 3.3 \scriptsize{[1,8]} & 50.0 \scriptsize{[42,58]} \\
+Uncond. steering (control) & 98.5 \scriptsize{[96,99]} & 96.0 \scriptsize{[90,98]} & 99.5 \scriptsize{[97,100]} & 100.0 \scriptsize{[98,100]} & 98.0 \scriptsize{[94,99]} & 0.0 \scriptsize{[0,2]} \\
+Refusal weight patch (ours) & 61.0 \scriptsize{[54,67]} & 90.0 \scriptsize{[83,94]} & 55.0 \scriptsize{[48,62]} & 3.6 \scriptsize{[2,7]} & 3.3 \scriptsize{[1,8]} & 50.0 \scriptsize{[42,58]} \\
+\bottomrule
+\end{tabular}
