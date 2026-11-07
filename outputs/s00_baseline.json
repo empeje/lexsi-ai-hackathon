@@ -1,0 +1,14 @@
+{
+  "instruct": {
+    "refusal_harmful": 0.935,
+    "refusal_advbench": 1.0,
+    "overrefusal_xstest": 0.508,
+    "gsm8k_acc": 0.5133333333333333
+  },
+  "base": {
+    "refusal_harmful": 0.355,
+    "refusal_advbench": 0.06,
+    "overrefusal_xstest": 0.304,
+    "gsm8k_acc": 0.04
+  }
+}

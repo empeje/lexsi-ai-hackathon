@@ -1,0 +1,6 @@
+.venv/
+outputs/*.safetensors
+outputs/models/
+__pycache__/
+data/
+outputs/*.log

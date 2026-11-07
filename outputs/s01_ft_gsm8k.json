@@ -1,0 +1,6 @@
+{
+  "refusal_harmful": 0.6,
+  "refusal_advbench": 0.91,
+  "overrefusal_xstest": 0.036,
+  "gsm8k_acc": 0.49333333333333335
+}

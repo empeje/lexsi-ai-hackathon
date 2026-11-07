@@ -1,0 +1,44 @@
+{
+  "wise_ft_0.5": {
+    "refusal_harmful": 0.77,
+    "refusal_advbench": 0.94,
+    "overrefusal_xstest": 0.08,
+    "gsm8k_acc": 0.56
+  },
+  "task_arith_0.5": {
+    "refusal_harmful": 0.83,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.112,
+    "gsm8k_acc": 0.52
+  },
+  "safe_lora_t0.5": {
+    "refusal_harmful": 0.84,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.14,
+    "gsm8k_acc": 0.5466666666666666
+  },
+  "safe_delta_0.1": {
+    "refusal_harmful": 0.96,
+    "refusal_advbench": 1.0,
+    "overrefusal_xstest": 0.328,
+    "gsm8k_acc": 0.49333333333333335
+  },
+  "safety_vec_r8": {
+    "refusal_harmful": 0.96,
+    "refusal_advbench": 1.0,
+    "overrefusal_xstest": 0.436,
+    "gsm8k_acc": 0.52
+  },
+  "c_delta_theta_1.0": {
+    "refusal_harmful": 0.9,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.252,
+    "gsm8k_acc": 0.4266666666666667
+  },
+  "safe_merge": {
+    "refusal_harmful": 0.63,
+    "refusal_advbench": 0.9,
+    "overrefusal_xstest": 0.036,
+    "gsm8k_acc": 0.52
+  }
+}

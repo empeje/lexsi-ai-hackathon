@@ -1,0 +1,26 @@
+{
+  "0.75": {
+    "refusal_harmful": 0.84,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.164,
+    "gsm8k_acc": 0.4666666666666667
+  },
+  "1.0": {
+    "refusal_harmful": 0.89,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.268,
+    "gsm8k_acc": 0.4666666666666667
+  },
+  "0.25": {
+    "refusal_harmful": 0.71,
+    "refusal_advbench": 0.94,
+    "overrefusal_xstest": 0.06,
+    "gsm8k_acc": 0.5466666666666666
+  },
+  "0.5": {
+    "refusal_harmful": 0.82,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.112,
+    "gsm8k_acc": 0.49333333333333335
+  }
+}
