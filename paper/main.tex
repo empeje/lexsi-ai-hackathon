@@ -14,8 +14,9 @@
 
 \title{Repairing Safety Drift Without Retraining in Small Fine-Tuned Language Models: Weight-Space Methods and a Located Refusal Direction}
 
-\author{\IEEEauthorblockN{Anonymous Authors}
-\IEEEauthorblockA{\textit{Lexsi AI Hackathon, Track 2b (AI Safety and Correction)}}
+\author{\IEEEauthorblockN{Abdurrachman Mappuji\IEEEauthorrefmark{1}\IEEEauthorrefmark{2}}
+\IEEEauthorblockA{\IEEEauthorrefmark{1}\textit{GCAS College Dublin}, Dublin, Ireland, Email: abdurrachman.mappuji@gcas.ie}
+\IEEEauthorblockA{\IEEEauthorrefmark{2}\textit{Department of Cyber Security, Royal Holloway, University of London}, Egham, United Kingdom}
 }
 
 \maketitle
@@ -31,7 +32,7 @@ safety drift, fine-tuning, weight-space repair, refusal direction, activation st
 \section{Introduction}
 Safety alignment of instruction-tuned language models is fragile: fine-tuning on data that has nothing to do with safety can erode refusal behaviour, even when no one intends it~\cite{qi2023finetuning}. Practitioners who adapt an aligned model to a downstream task therefore face a practical question: after the model has drifted, can its safety be restored cheaply, without a second round of training, and without losing the task skill that motivated the fine-tune?
 
-We study this question on a small, fully reproducible setup that runs on a laptop GPU (Apple M1 with MPS). We fine-tune Qwen2.5-1.5B-Instruct on grade-school math (GSM8K) with LoRA, confirm that harmful-prompt refusal drops sharply, and then compare a family of training-free repairs: weight-space methods implemented in the SafeTune library, and two repairs of our own that are motivated by locating where refusal is represented in the network. Our contributions are:
+We study this question on a small, cheap-to-reproduce setup: the Qwen experiments run on a laptop GPU (Apple M1 with MPS) and the Tiny Aya experiments on a single cloud GPU (NVIDIA L4). We fine-tune Qwen2.5-1.5B-Instruct on grade-school math (GSM8K) with LoRA, confirm that harmful-prompt refusal drops sharply, and then compare a family of training-free repairs: weight-space methods implemented in the SafeTune library, and two repairs of our own that are motivated by locating where refusal is represented in the network. Our contributions are:
 \begin{itemize}
 \item A measurement of safety drift under a benign fine-tune, using six metrics with per-prompt outcomes and 95\% Wilson intervals, including a plain-harmless over-refusal set and XSTest's matched \emph{unsafe} prompts. We show that XSTest's safe look-alike prompts are a poor stand-in for over-refusal when used alone.
 \item A layer-wise localisation of the refusal direction in the aligned and the drifted model, with a causal test (directional ablation and activation addition).
@@ -47,7 +48,7 @@ We study this question on a small, fully reproducible setup that runs on a lapto
 
 \section{Setup}
 \subsection{Models and drift}
-The aligned reference is Qwen2.5-1.5B-Instruct~\cite{qwen25}, the unaligned reference is Qwen2.5-1.5B (base). All models run in bfloat16 on an Apple M1 GPU through PyTorch MPS. To induce drift we fine-tune the aligned model with LoRA~\cite{hu2022lora} (rank 16, $\alpha$=32, all attention and MLP projections, learning rate $2\times10^{-4}$, batch size 8, one epoch over 2{,}000 GSM8K~\cite{cobbe2021gsm8k} training examples, loss on response tokens only) and merge the adapter. We call the result the \emph{drifted} model. Safety data play no role in this fine-tune. A second model, Tiny Aya Global~\cite{tinyaya} (3.35B parameters, 36 layers), receives the same recipe with its longer chat-template prompts (Section~\ref{sec:tinyaya}).
+The aligned reference is Qwen2.5-1.5B-Instruct~\cite{qwen25}, the unaligned reference is Qwen2.5-1.5B (base). The Qwen models run in bfloat16 on an Apple M1 GPU through PyTorch MPS; Tiny Aya runs in bfloat16 on an NVIDIA L4 (22\,GB). To induce drift we fine-tune the aligned model with LoRA~\cite{hu2022lora} (rank 16, $\alpha$=32, all attention and MLP projections, learning rate $2\times10^{-4}$, batch size 8, one epoch over 2{,}000 GSM8K~\cite{cobbe2021gsm8k} training examples, loss on response tokens only) and merge the adapter. We call the result the \emph{drifted} model. Safety data play no role in this fine-tune. A second model, Tiny Aya Global~\cite{tinyaya} (3.35B parameters, 36 layers), receives the same recipe with its longer chat-template prompts (Section~\ref{sec:tinyaya}).
 
 \subsection{Evaluation}
 All generation is greedy. Each response is classified as a refusal if one of a fixed list of refusal phrases (e.g.\ ``I'm sorry'', ``I can't'', ``I cannot assist'') appears in its first 200 characters, following the substring convention of~\cite{arditi2024refusal}. We report six quantities, each with a 95\% Wilson interval:
@@ -70,7 +71,7 @@ For each layer $l$ we collect the residual-stream state at the final prompt toke
 Separability is the AUC of the projection $\langle\hat r_l,h\rangle$ on held-out validation prompts. For a causal test we (i) subtract the projection onto $\hat r_l$ from the output of every decoder layer (\emph{ablation}) and measure the refusal rate on harmful prompts, and (ii) add $\lVert\mu^{\text{harm}}_l-\mu^{\text{safe}}_l\rVert\,\hat r_l$ at layer $l$ (\emph{addition}) and measure refusal on harmless prompts (60 prompts each). We repeat the analysis on the drifted model and compare directions and gaps $g_l$.
 
 \subsection{Training-free repairs from SafeTune}
-We apply, to the drifted weights $W_d$ with aligned weights $W_a$ and base weights $W_b$, the following methods from SafeTune v0.1.12~\cite{safetune}: ReSta ($\alpha{=}0.5$, a DARE-masked safety vector $\alpha(W_a-W_b)$ added to $W_d$), task arithmetic ($\alpha{=}0.5$), WiSE-FT ($\alpha{=}0.5$, interpolation towards $W_a$), Safe LoRA (threshold 0.5), SafeDelta (strength 0.1), safety-vector restore (truncated-SVD safety subspace, rank 8, $\alpha{=}1$), and C-$\Delta\Theta$ (strength 1). All run in seconds on a laptop and require no gradient steps. A first, smaller pass (100 harmful, 50 AdvBench, 75 GSM8K prompts) also swept ReSta's $\alpha$ and included SafeMerge, which left the drifted model essentially unchanged (63\% harmful refusal vs.\ 60\%).
+We apply, to the drifted weights $W_d$ with aligned weights $W_a$ and base weights $W_b$, the following methods from SafeTune v0.1.12~\cite{safetune}: ReSta ($\alpha{=}0.5$, a DARE-masked safety vector $\alpha(W_a-W_b)$ added to $W_d$), task arithmetic ($\alpha{=}0.5$), WiSE-FT ($\alpha{=}0.5$, interpolation towards $W_a$), Safe LoRA (threshold 0.5), SafeDelta (strength 0.1), safety-vector restore (truncated-SVD safety subspace, rank 8, $\alpha{=}1$), and C-$\Delta\Theta$ (strength 1). None needs gradient steps, and on Qwen the weight edit itself takes seconds on a laptop. A first, smaller pass (100 harmful, 50 AdvBench, 75 GSM8K prompts) also swept ReSta's $\alpha$ and included SafeMerge, which left the drifted model essentially unchanged (63\% harmful refusal vs.\ 60\%).
 
 \subsection{Repairs that use the located direction}\label{sec:method-ours}
 We propose two repairs that use $\hat r_l$ on layers $\mathcal L=\{14,\dots,24\}$, the band where the causal test shows the direction matters.
@@ -90,7 +91,7 @@ with $\hat r_l$ taken from the aligned model and $\beta\in\{1,2\}$.
 \input{conclusion}
 
 \section*{Reproducibility}
-Code, result files and the scripts that generate every table and figure are in the accompanying repository (\texttt{empeje/lexsi-ai-hackathon}); all experiments ran on a single Apple M1 machine with 64\,GB of unified memory.
+Code, result files and the scripts that generate every table and figure are in the accompanying repository (\texttt{empeje/lexsi-ai-hackathon}); the Qwen experiments ran on a single Apple M1 machine with 64\,GB of unified memory and the Tiny Aya experiments on one NVIDIA L4 (22\,GB) in Colab Enterprise, using the notebook in the repository's \texttt{colab/} folder.
 
 \begin{thebibliography}{99}
 \bibitem{qi2023finetuning} X.~Qi \emph{et al.}, ``Fine-tuning aligned language models compromises safety, even when users do not intend to!'' in \emph{ICLR}, 2024.
