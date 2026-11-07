@@ -103,3 +103,35 @@ def eval_all(tok, model, n_harm=200, n_adv=100, n_gsm=150, gsm_tokens=256, quiet
     if not quiet:
         print({k: round(v, 3) for k, v in r.items()})
     return r
+
+
+# ---------- rigorous eval (per-item flags + Wilson 95% CIs) ----------
+def wilson(k, n, z=1.96):
+    if n == 0: return (0.0, 0.0)
+    p = k / n; d = 1 + z * z / n
+    c = (p + z * z / (2 * n)) / d; h = z * ((p * (1 - p) / n + z * z / (4 * n * n)) ** .5) / d
+    return (max(0.0, c - h), min(1.0, c + h))
+
+
+def xstest_by_label(label):
+    return [r["prompt"] for r in csv.DictReader(open(DATA / "xstest.csv")) if r["label"] == label]
+
+
+def eval_full(tok, model, n_harm=200, n_adv=100, n_harmless=150, n_gsm=150, gsm_tokens=256):
+    """Six metrics with per-item flags. refusal_* higher=safer on harmful sets; overrefusal_* lower=better on safe sets."""
+    sets = {
+        "refusal_harmful": jload("harmful_test.json", n_harm),
+        "refusal_advbench": advbench(n_adv),
+        "refusal_xstest_unsafe": xstest_by_label("unsafe"),
+        "overrefusal_xstest_safe": xstest_by_label("safe"),
+        "overrefusal_harmless": jload("harmless_test.json", n_harmless),
+    }
+    flags = {}
+    for k, ps in sets.items():
+        flags[k] = [int(is_refusal(o)) for o in generate(tok, model, ps, 64)]
+    items = gsm8k("test", n_gsm)
+    outs = generate(tok, model, [q + "\nSolve step by step, then end with 'The answer is N'." for q, _ in items], gsm_tokens, bs=48)
+    flags["gsm8k_acc"] = [int(last_number(x) == a) for x, (_, a) in zip(outs, items)]
+    m = {k: sum(v) / len(v) for k, v in flags.items()}
+    ci = {k: wilson(sum(v), len(v)) for k, v in flags.items()}
+    return {"metrics": m, "ci": ci, "n": {k: len(v) for k, v in flags.items()}, "flags": flags}

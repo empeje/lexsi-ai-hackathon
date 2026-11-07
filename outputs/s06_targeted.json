@@ -1,0 +1,32 @@
+{
+  "cond_steer_L14-24_x1.0": {
+    "refusal_harmful": 0.96,
+    "refusal_advbench": 0.92,
+    "overrefusal_xstest": 0.492,
+    "gsm8k_acc": 0.5333333333333333
+  },
+  "cond_steer_L14-24_x2.0": {
+    "refusal_harmful": 0.93,
+    "refusal_advbench": 0.98,
+    "overrefusal_xstest": 0.644,
+    "gsm8k_acc": 0.5066666666666667
+  },
+  "uncond_steer_L14-24_x1.0": {
+    "refusal_harmful": 0.99,
+    "refusal_advbench": 1.0,
+    "overrefusal_xstest": 1.0,
+    "gsm8k_acc": 0.0
+  },
+  "weight_patch_L14-24_b1.0": {
+    "refusal_harmful": 0.65,
+    "refusal_advbench": 0.92,
+    "overrefusal_xstest": 0.036,
+    "gsm8k_acc": 0.52
+  },
+  "weight_patch_L14-24_b2.0": {
+    "refusal_harmful": 0.65,
+    "refusal_advbench": 0.9,
+    "overrefusal_xstest": 0.032,
+    "gsm8k_acc": 0.5466666666666666
+  }
+}
