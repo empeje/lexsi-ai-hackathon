@@ -8,12 +8,12 @@ def layers_of(model):
 
 
 @torch.no_grad()
-def last_token_acts(tok, model, prompts, bs=32):
+def last_token_acts(tok, model, prompts, bs=8):
     """Return [n, n_layers, d] residual stream at final prompt token (output of each decoder layer)."""
     res = []
     for i in range(0, len(prompts), bs):
         enc = tok(chat(tok, prompts[i:i + bs]), return_tensors="pt", padding=True, add_special_tokens=False).to(DEVICE)
-        hs = model(**enc, output_hidden_states=True).hidden_states[1:]  # drop embeddings
+        hs = model(**enc, output_hidden_states=True, logits_to_keep=1).hidden_states[1:]  # drop embeddings; logits_to_keep=1 avoids a [bs, seq, vocab] logits tensor (OOM on 256k vocabularies)
         res.append(torch.stack([h[:, -1, :].float().cpu() for h in hs], 1))
     return torch.cat(res)
 

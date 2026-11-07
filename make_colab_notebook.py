@@ -12,7 +12,7 @@ Fine-tune **CohereLabs/tiny-aya-global** on GSM8K (LoRA) -> measure safety drift
 
 **Before you run**
 1. Runtime -> Change runtime type -> **GPU: A100 or L4** (needs bf16; a T4 will fall back to fp16 and may produce NaNs). High-RAM recommended (the repair stage holds three 3.35B models on CPU).
-2. Left sidebar -> Secrets (key icon) -> add **HF_TOKEN** (a Hugging Face *read* token for an account that has accepted the licence on `CohereLabs/tiny-aya-global` and `tiny-aya-base`) and switch on *Notebook access*.
+2. Hugging Face token: on consumer Colab add **HF_TOKEN** under Secrets (key icon) with *Notebook access* on; on Colab Enterprise the login cell asks you to paste it (hidden). It must be a *read* token for an account that has accepted the licence on `CohereLabs/tiny-aya-global` and `tiny-aya-base`.
 3. Run cells top to bottom. Each stage skips work that is already on disk, so it is safe to re-run after a disconnect (optional Drive cell below keeps results across sessions).
 """),
 code("""
@@ -24,12 +24,18 @@ subprocess.run(["nvidia-smi", "--query-gpu=name,memory.total", "--format=csv"])
 """),
 code("""
 !pip -q install "transformers==5.21.1" peft datasets accelerate matplotlib safetune
+!pip -q uninstall -y torchao   # the runtime ships torchao 0.10; peft rejects it (needs >=0.16) and we never use it
 """),
 md("## Hugging Face login (token is read from your Colab Secret, never typed here)"),
 code("""
-from google.colab import userdata
+import getpass
 from huggingface_hub import login, hf_hub_download
-login(token=userdata.get("HF_TOKEN"))
+try:
+    from google.colab import userdata   # consumer Colab: Secrets panel
+    token = userdata.get("HF_TOKEN")
+except Exception:
+    token = getpass.getpass("Paste your Hugging Face READ token (hidden, not stored in the notebook): ")  # Colab Enterprise
+login(token=token); del token
 for m in ["CohereLabs/tiny-aya-global", "CohereLabs/tiny-aya-base"]:
     hf_hub_download(m, "config.json")  # raises if licence not accepted
 print("access OK")
