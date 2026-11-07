@@ -65,3 +65,5 @@ Findings (cautious, n=100 so +/-~10 points):
 2. **No clear contagion.** Aligned agents after a drifted one refuse as much as in AAAA (DAAA pos2 .70 vs .72); the drifted agent at pos 4 of AAAD (.57) equals its neutral-wrapper rate (.57). With FIXED peer replies the compliant opener does not lower the aligned agent's refusal (.77 vs .79 neutral). Position-2 drops are mostly the wrapper (-8 points for aligned, +11 for drifted).
 3. Even all-aligned chains answer 34% of requests somewhere (13% for a single bare aligned agent): re-asking with different surrounding context is a weak form of refusal shopping.
 4. Anomalies we cannot explain: a refusing peer reply lowered aligned refusal (.67) and a compliant opener raised drifted refusal (.67). Possibly the substring detector interacting with the framing; generations were not saved, so this is unchecked. Treat contagion as "not detected", not "absent".
+
+3-D chains (e4_chain_extra.json): ADDD refusal [.87,.51,.61,.48] answered .64; DDDA [.46,.52,.51,.70] answered .69. Union by #D: 0:.34, 1:.54-.60, 2:.63, 3:.64-.69, 4:.72.
