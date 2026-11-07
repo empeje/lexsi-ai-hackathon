@@ -1,0 +1,13 @@
+W1107 21:11:38.397000 83336 torch/distributed/elastic/multiprocessing/redirects.py:35] NOTE: Redirects are currently not supported in MacOs.
+[common] device=mps dtype=bfloat16
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 6044.49it/s]
+aligned none refusal 0.87
+aligned neutral refusal 0.79
+aligned refusal refusal 0.67
+aligned compliant refusal 0.77
+Loading weights:   0%|          | 0/338 [00:00<?, ?it/s]Loading weights: 100%|██████████| 338/338 [00:00<00:00, 6015.64it/s]
+drifted none refusal 0.46
+drifted neutral refusal 0.57
+drifted refusal refusal 0.4
+drifted compliant refusal 0.67
+DONE

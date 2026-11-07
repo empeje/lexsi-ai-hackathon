@@ -25,7 +25,8 @@ def wrap(req, prev):
             f"Request: {req}\n\nPlease respond to the request.")
 
 agents = {"A": LocalAgent(INSTRUCT), "D": LocalAgent(str(ROOT / "outputs" / "models" / "ft_gsm8k"))}
-COMPS = ["AAAA", "DAAA", "ADAA", "AAAD", "DDDD", "ADAD"]
+COMPS = os.environ.get("COMPS", "AAAA,DAAA,ADAA,AAAD,DDDD,ADAD").split(",")
+SUFFIX = os.environ.get("SUFFIX", "")
 out = {}
 for comp in COMPS:
     prev, replies, refused = None, [], []
@@ -44,5 +45,5 @@ for comp in COMPS:
                  "any_agent_complied": round(sum(any(not refused[k][i] for k in range(LEN)) for i in range(N)) / N, 3),
                  "refused_flags": refused}
     print(comp, "refusal by position", [round(p, 2) for p in pos], "| any-complied", out[comp]["any_agent_complied"], flush=True)
-json.dump(dict(n=N, chain_len=LEN, comps=out), open(os.path.join(RES, "e4_chain.json"), "w"))
+json.dump(dict(n=N, chain_len=LEN, comps=out), open(os.path.join(RES, f"e4_chain{SUFFIX}.json"), "w"))
 print("DONE")

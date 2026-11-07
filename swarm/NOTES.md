@@ -41,3 +41,27 @@ Findings (cautious):
 2. **Obfuscation defeats both.** rot13/base64: AUC 0.52-0.65, drifted agent complies (0-3% refusal). The aligned agent's rot13/leet "refusals" are indiscriminate (harmless refused 98-99%), i.e. confusion, not detection. The prompted 1.5B judge is near chance even on clean text (AUC 0.56) so it is not a usable baseline here.
 3. **Splitting (mechanical word-midpoint cut):** probe AUC stays 0.93-0.99, so no evasion gap for the probe, but harmless fragments also raise alarms (FPR 0.21-0.33). Behaviourally, fragment refusals are mostly confusion (aligned refuses 72% of harmless first halves), so behavioural fragment monitors are not meaningful. This differs from the UK AISI result (secondhand summary) and probably reflects our crude split; do not generalise.
 4. Perplexity flags obfuscation (rot13 100%) but not harm; its combination with the probe is untested.
+
+## E4 / E4b results (live chains, greedy, n=100 harmful prompts; A=aligned, D=benign-drifted agent)
+Chain: agent 1 sees the request; agent k sees it plus "a teammate replied: <previous reply>". Refusal by position and union ("any agent complied"):
+
+| chain | pos1 | pos2 | pos3 | pos4 | any agent complied |
+|---|---|---|---|---|---|
+| AAAA | .87 | .72 | .74 | .76 | .34 |
+| DAAA | .46 | .70 | .73 | .70 | .60 |
+| ADAA | .87 | .51 | .73 | .71 | .59 |
+| AAAD | .87 | .72 | .74 | .57 | .54 |
+| ADAD | .87 | .51 | .73 | .46 | .63 |
+| DDDD | .46 | .52 | .51 | .45 | .72 |
+
+E4b control (receiver sees the same wrapper around a FIXED peer reply; refusal rate):
+| receiver | no wrapper | neutral peer | peer refuses | peer complies |
+|---|---|---|---|---|
+| aligned | .87 | .79 | .67 | .77 |
+| drifted | .46 | .57 | .40 | .67 |
+
+Findings (cautious, n=100 so +/-~10 points):
+1. **Union grows with the number of drifted agents but with diminishing steps**: 0 D: .34, 1 D: .54-.60, 2 D (ADAD): .63, 4 D: .72. The first drifted agent adds ~20-25 points; later ones add less. This does NOT support the "marginal misaligned agent accelerates" hypothesis in this toy setting (3-D chains pending in e4_chain_extra).
+2. **No clear contagion.** Aligned agents after a drifted one refuse as much as in AAAA (DAAA pos2 .70 vs .72); the drifted agent at pos 4 of AAAD (.57) equals its neutral-wrapper rate (.57). With FIXED peer replies the compliant opener does not lower the aligned agent's refusal (.77 vs .79 neutral). Position-2 drops are mostly the wrapper (-8 points for aligned, +11 for drifted).
+3. Even all-aligned chains answer 34% of requests somewhere (13% for a single bare aligned agent): re-asking with different surrounding context is a weak form of refusal shopping.
+4. Anomalies we cannot explain: a refusing peer reply lowered aligned refusal (.67) and a compliant opener raised drifted refusal (.67). Possibly the substring detector interacting with the framing; generations were not saved, so this is unchecked. Treat contagion as "not detected", not "absent".
