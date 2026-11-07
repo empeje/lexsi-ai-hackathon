@@ -31,11 +31,21 @@ def steer(scale, cond):
     return b
 
 def wpatch(beta):
+    """Undo the fine-tune's change along the refusal direction, one matrix at a time (no full fp32 state dicts:
+    two fp32 copies of a 3.35B model need ~27 GB of CPU RAM, more than a 31 GB runtime can spare)."""
     def b():
-        d = fresh(DR); ft = {k: v.float() for k, v in d.state_dict().items()}
-        inst = {k: v.float() for k, v in fresh(INSTRUCT).state_dict().items()}
-        sd = refusal_patch(ft, inst, torch.load(OUT / "refdirs_instruct.pt"), BAND, beta=beta)
-        d.load_state_dict({k: v.to(DTYPE) for k, v in sd.items()}); return d, NULL
+        d, inst = fresh(DR), fresh(INSTRUCT)
+        dirs = torch.load(OUT / "refdirs_instruct.pt")
+        dp, ip = dict(d.named_parameters()), dict(inst.named_parameters())
+        with torch.no_grad():
+            for l in BAND:
+                r = dirs[l].float().to(DEVICE)
+                for k in (f"model.layers.{l}.self_attn.o_proj.weight", f"model.layers.{l}.mlp.down_proj.weight"):
+                    wd, wi = dp[k].data.to(DEVICE).float(), ip[k].data.to(DEVICE).float()
+                    new = wd - beta * torch.outer(r, r @ (wd - wi))
+                    dp[k].data.copy_(new.to(DTYPE).cpu())
+        del inst, ip; free_mem()
+        return d, NULL
     return b
 
 MODELS = {
@@ -45,14 +55,15 @@ MODELS = {
     "wise_ft_0.5": st(lambda d, b, a: R.WiseFTTrainer(d, aligned_model=a, alpha=0.5)),
     "task_arith_0.5": st(lambda d, b, a: R.TaskArithmeticTrainer(d, base_model=b, aligned_model=a, alpha=TA)),
     "safe_lora": st(lambda d, b, a: R.SafeLoRATrainer(d, base_model=b, aligned_model=a, alpha=0.5, threshold=0.5)),
-    "safe_delta_0.1": st(lambda d, b, a: R.SafeDeltaTrainer(d, aligned_model=a, strength=0.1)),
-    "safety_vec_r8": st(lambda d, b, a: R.SafetyVectorRestoreTrainer(d, aligned_model=a, alpha=1.0, rank=8)),
-    "c_delta_theta": st(lambda d, b, a: R.CThetaTrainer(d, base_model=b, aligned_model=a, strength=1.0)),
     "cond_steer_x1": steer(1.0, True),
     "uncond_steer_x1": steer(1.0, False),
     "weight_patch_b1": wpatch(1.0),
+    "safety_vec_r8": st(lambda d, b, a: R.SafetyVectorRestoreTrainer(d, aligned_model=a, alpha=1.0, rank=8)),
+    "c_delta_theta": st(lambda d, b, a: R.CThetaTrainer(d, base_model=b, aligned_model=a, strength=1.0)),
+    "safe_delta_0.1": st(lambda d, b, a: R.SafeDeltaTrainer(d, aligned_model=a, strength=0.1)),
 }
-only = sys.argv[1:] or list(MODELS)
+SKIP = set(filter(None, os.environ.get("SKIP", "").split(",")))  # e.g. SKIP=safe_delta_0.1,c_delta_theta
+only = sys.argv[1:] or [m for m in MODELS if m not in SKIP]
 for name in only:
     f = FIN / f"{name}.json"
     if f.exists(): continue

@@ -42,3 +42,26 @@ Figure~\ref{fig:tradeoff} plots safety (mean refusal over the three harmful sets
 \paragraph{Conditional steering.} Gated steering with the size set from the measured gap restores refusal to the aligned level: 96.5\% on harmful prompts, 96.0\% on AdvBench and 98.0\% on XSTest-unsafe. Plain-harmless over-refusal is 3.3\% [1,8], below the aligned model's 8.0\% [5,13], and GSM8K is 50.0\%. Against the best weight-space methods the evidence is comparability, not superiority: plain-harmless over-refusal for safety-vector restore is 6.7\% [4,12], an overlapping interval (five versus ten of 150 prompts), and the harmful-prompt refusal intervals overlap as well.
 \paragraph{The gate is essential.} The same push applied at every position refuses 98.5\% of harmful prompts but also 98.0\% of plain harmless prompts and 100\% of safe look-alikes, and solves no GSM8K problem (0.0\%). The detector, not the push, is what preserves normal behaviour.
 \paragraph{Look-alike prompts.} Conditional steering refuses 49.2\% of XSTest's safe look-alikes, matching the aligned model (50.8\%) and safety-vector restore (43.6\%). The direction appears to respond to harmful-looking content rather than harm itself. Steering therefore restores the aligned model's behaviour, including its look-alike weakness, and does not improve on it.
+
+\subsection{A second model: Tiny Aya Global shows no drift}\label{sec:tinyaya}
+We repeated the pipeline on Tiny Aya Global. Its chat template prepends a 366-token system preamble to every prompt, so GSM8K sequences are about 600 tokens and we truncate at 640 (the 320 used for Qwen would have masked every answer). We used the same LoRA recipe, and 250 steps took about 15 minutes on one NVIDIA L4. Evaluation uses the same six metrics with the default template, preamble included. Repairs use SafeTune's guidance for this model, $\alpha{=}0.25$ for ReSta and task arithmetic. Only six of the twelve planned configurations finished (Section~\ref{sec:limits}).
+
+\begin{table*}[t]
+\centering
+\caption{Tiny Aya Global: refusal rates and GSM8K accuracy (\%) with 95\% Wilson intervals; same metrics and sample sizes as Table~\ref{tab:main}. Only six of twelve planned configurations finished.}
+\label{tab:tinyaya}
+\footnotesize
+\setlength{\tabcolsep}{4pt}
+\input{table_tiny_aya}
+\end{table*}
+
+\paragraph{The fine-tune does not erode safety.} Harmful-prompt refusal is 89.5\% before and after, AdvBench is 100\% in both, XSTest-unsafe moves from 80.0\% to 77.5\% (intervals overlap) and GSM8K from 59.3\% to 62.0\% (Table~\ref{tab:tinyaya}). The localisation agrees (Figure~\ref{fig:locate-tinyaya}): the aligned and drifted refusal directions have cosine similarity 0.94--1.0 at every layer we sampled (the even layers), and the drifted model's harmful-versus-harmless gap is slightly \emph{larger}, not smaller (97 versus 92 at layer 34). The causal transition sits at layers 12--14 of 36, as for Qwen: ablating the direction from layer 14 on leaves 2--22\% refusal, and adding it induces 78--98\%. We did not test why Tiny Aya resists drift; one untested candidate is the safety-mode preamble present in both training and evaluation prompts.
+
+\begin{figure*}[t]
+\centering
+\includegraphics[width=\textwidth]{figures/locate_tiny_aya.pdf}
+\caption{Tiny Aya Global: gap along the refusal direction (aligned vs drifted, even layers), causal test on the aligned model (60 prompts per point), and cosine similarity between the two models' directions. Compare Figure~\ref{fig:locate}.}
+\label{fig:locate-tinyaya}
+\end{figure*}
+
+\paragraph{Task-vector repairs hurt a model that did not drift.} ReSta ($\alpha{=}0.25$) lowers XSTest-unsafe refusal to 59.0\% [52,66] from 77.5\% [71,83] and GSM8K to 42.0\% [34,50] from 62.0\% [54,69]; both intervals fall clear of the drifted model's. Task arithmetic gives 66.5\% on XSTest-unsafe (a borderline drop, intervals overlap slightly) and 42.7\% [35,51] on GSM8K. A plausible reason, which we did not isolate, is the size of the aligned-minus-base difference in this model: the relative weight change averages about 21\% (maximum 58\%) across matrices, far larger than a small fine-tune. WiSE-FT and Safe LoRA are harmless (XSTest-unsafe 79.0\% and 78.0\%), and WiSE-FT is highest on GSM8K at 69.3\%.
