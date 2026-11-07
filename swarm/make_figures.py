@@ -19,19 +19,25 @@ for key, lab, col, mk in rules:
 ax.set_xlabel("drifted agents in a pool of 5"); ax.set_ylabel("harmful requests answered (%)"); ax.set_ylim(0, 48); ax.set_xticks(ks)
 ax.legend(frameon=False, fontsize=7, loc="upper left", bbox_to_anchor=(0.0, 1.02)); save(fig, "fig_aggregation")
 
-# Fig 2: E3/E3b drifted agent, behaviour vs probe
-p = json.load(open(os.path.join(R, "e3_monitor.json")))["results"]["probe_drifted"]["cond"]; b = json.load(open(os.path.join(R, "e3b_behavior.json")))["drifted"]
-conds = ["direct", "spaced", "leet", "base64", "rot13"]; N = 100
-beh = [sum(b[c]["refuse_harmful"]) / N * 100 for c in conds]; tpr = [p[c]["tpr"] * 100 for c in conds]; fpr = [p[c]["fpr"] * 100 for c in conds]
-fig, ax = plt.subplots(figsize=(3.4, 2.5)); w = 0.26; xs = range(len(conds))
-for off, vals, col, lab in [(-w, beh, BLUE, "agent refuses harmful"), (0, tpr, ORANGE, "probe flags harmful"), (w, fpr, AQUA, "probe flags harmless")]:
-    ax.bar([x + off for x in xs], vals, width=w * 0.9, color=col, label=lab)
-ax.set_xticks(list(xs)); ax.set_xticklabels(conds); ax.set_ylabel("%"); ax.set_ylim(0, 112)
-ax.legend(frameon=False, fontsize=6.5, ncol=1, loc="upper right"); ax.set_title("benign-drifted agent", fontsize=8, color=MUTED, loc="left"); save(fig, "fig_probe_vs_behavior")
+# Fig 2: E3/E3b/E3c drifted agent: behaviour vs two internal readouts (n=200)
+m = json.load(open(os.path.join(R, "e3c_monitor.json")))["results"]; bb = json.load(open(os.path.join(R, "e3b_behavior_n200.json")))["drifted"]
+conds = ["direct", "spaced", "leet", "base64", "rot13"]; N = len(bb["direct"]["refuse_harmful"])
+beh = [sum(bb[c]["refuse_harmful"]) / N * 100 for c in conds]
+fig, (a1, a2) = plt.subplots(1, 2, figsize=(6.9, 2.5), gridspec_kw={"width_ratios": [1, 1]}); w = 0.26; xs = range(len(conds))
+for off, vals, col, lab in [(-w, beh, BLUE, "agent refuses"), (0, [m["probe_drifted"][c]["tpr"] * 100 for c in conds], ORANGE, "probe flags"), (w, [m["refusal_lp_drifted"][c]["tpr"] * 100 for c in conds], AQUA, "refusal-lik. flags")]:
+    a1.bar([x + off for x in xs], vals, width=w * 0.9, color=col, label=lab)
+a1.set_xticks(list(xs)); a1.set_xticklabels(conds); a1.set_ylabel("harmful requests (%)"); a1.set_ylim(0, 118); a1.legend(frameon=False, fontsize=6.5, ncol=3, loc="upper center", columnspacing=0.8, handlelength=1.0)
+a1.set_title("(a) acted on vs flagged, drifted agent", fontsize=7.5, color=MUTED, loc="left")
+for off, key, col, lab in [(-w, "probe_drifted", ORANGE, "probe"), (0, "refusal_lp_drifted", AQUA, "refusal-lik."), (w, "keyword", YEL, "keyword")]:
+    v = [m[key][c]["auc"] for c in conds]; ci = [m[key][c]["auc_ci"] for c in conds]
+    a2.bar([x + off for x in xs], v, width=w * 0.9, color=col, label=lab, yerr=[[x - c[0] for x, c in zip(v, ci)], [c[1] - x for x, c in zip(v, ci)]], error_kw={"elinewidth": 0.6, "capsize": 1.2, "ecolor": MUTED})
+a2.axhline(0.5, color=MUTED, lw=0.6, ls=(0, (3, 2))); a2.set_xticks(list(xs)); a2.set_xticklabels(conds); a2.set_ylabel("AUC (harmful vs harmless)"); a2.set_ylim(0.4, 1.12)
+a2.legend(frameon=False, fontsize=6.5, ncol=3, loc="upper center", columnspacing=0.8, handlelength=1.0); a2.set_title("(b) discrimination by monitor", fontsize=7.5, color=MUTED, loc="left")
+fig.tight_layout(); save(fig, "fig_probe_vs_behavior")
 
 # Fig 3: E4 chains, union of answered requests vs number of drifted agents
 comps = {}
-for f in ["e4_chain.json", "e4_chain_extra.json"]:
+for f in (["e4_chain_n200.json"] if os.path.exists(os.path.join(R, "e4_chain_n200.json")) else ["e4_chain.json", "e4_chain_extra.json"]):
     fp = os.path.join(R, f)
     if os.path.exists(fp): comps.update(json.load(open(fp))["comps"])
 fig, ax = plt.subplots(figsize=(3.4, 2.4))
