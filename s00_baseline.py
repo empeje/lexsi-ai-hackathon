@@ -10,5 +10,5 @@ for name, path in [("instruct", INSTRUCT), ("base", BASE)]:
         pass
     res[name] = eval_all(tok, model)
     print(name, f"{time.time()-t:.0f}s")
-    del model; torch.mps.empty_cache()
+    del model; free_mem()
 json.dump(res, open(OUT / "s00_baseline.json", "w"), indent=2)

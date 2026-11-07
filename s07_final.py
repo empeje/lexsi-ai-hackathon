@@ -1,6 +1,6 @@
 """Stage 7: final, rigorous evaluation of instruct / drifted / every repair, with per-item flags and Wilson CIs.
 Repairs: SafeTune weight-space methods (recover.*), plus our locate-then-repair methods (cond/uncond steering, weight patch)."""
-import json, sys, time, contextlib, torch
+import json, os, sys, time, contextlib, torch
 from transformers import AutoModelForCausalLM
 from safetune.runner import recover as R
 from common import *
@@ -8,12 +8,14 @@ from circuits import calibrate_direction, CondSteer
 from repair import refusal_patch
 
 FIN = OUT / "final"; FIN.mkdir(exist_ok=True)
-DR = OUT / "models" / "ft_gsm8k"; BAND = list(range(14, 25))
+DR = OUT / "models" / "ft_gsm8k"
+_lo, _hi = (int(x) for x in os.environ.get("BAND", "14-24").split("-")); BAND = list(range(_lo, _hi + 1))  # repair layers (default: Qwen run)
 from transformers import AutoTokenizer
 tok = AutoTokenizer.from_pretrained(INSTRUCT, padding_side="left")
 fresh = lambda p: AutoModelForCausalLM.from_pretrained(p, dtype=DTYPE)
 gi = json.load(open(OUT / "s02_locate_instruct.json"))["gap"]; gd = json.load(open(OUT / "s02_locate_drifted.json"))["gap"]
 NULL = contextlib.nullcontext()
+TA = float(os.environ.get("TA_ALPHA", 0.5))  # ReSta / task-arithmetic strength (Tiny Aya: ~0.25 per SafeTune docs)
 
 def st(make):  # SafeTune recover method on (drifted, base, aligned)
     def b():
@@ -39,9 +41,9 @@ def wpatch(beta):
 MODELS = {
     "instruct": lambda: (fresh(INSTRUCT), NULL),
     "drifted": lambda: (fresh(DR), NULL),
-    "resta_a0.5": st(lambda d, b, a: R.ReStaTrainer(d, base_model=b, aligned_model=a, alpha=0.5, device=DEVICE)),
+    "resta_a0.5": st(lambda d, b, a: R.ReStaTrainer(d, base_model=b, aligned_model=a, alpha=TA, device=DEVICE)),
     "wise_ft_0.5": st(lambda d, b, a: R.WiseFTTrainer(d, aligned_model=a, alpha=0.5)),
-    "task_arith_0.5": st(lambda d, b, a: R.TaskArithmeticTrainer(d, base_model=b, aligned_model=a, alpha=0.5)),
+    "task_arith_0.5": st(lambda d, b, a: R.TaskArithmeticTrainer(d, base_model=b, aligned_model=a, alpha=TA)),
     "safe_lora": st(lambda d, b, a: R.SafeLoRATrainer(d, base_model=b, aligned_model=a, alpha=0.5, threshold=0.5)),
     "safe_delta_0.1": st(lambda d, b, a: R.SafeDeltaTrainer(d, aligned_model=a, strength=0.1)),
     "safety_vec_r8": st(lambda d, b, a: R.SafetyVectorRestoreTrainer(d, aligned_model=a, alpha=1.0, rank=8)),
@@ -62,4 +64,4 @@ for name in only:
         print(name, {k: round(v, 3) for k, v in r["metrics"].items()}, f"{time.time()-t:.0f}s", flush=True)
     except Exception as e:
         print(name, "FAILED", type(e).__name__, str(e)[:200], flush=True)
-    m = ctx = None; torch.mps.empty_cache()
+    m = ctx = None; free_mem()

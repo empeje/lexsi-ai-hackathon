@@ -6,13 +6,27 @@ from transformers import AutoTokenizer, AutoModelForCausalLM
 
 ROOT = Path(__file__).parent
 DATA = ROOT / "data"
-OUT = ROOT / "outputs"
-OUT.mkdir(exist_ok=True)
+# Model switch: MODEL_ID / BASE_ID / RUN_TAG env vars (defaults = the Qwen run, outputs/ unchanged).
+TAG = os.environ.get("RUN_TAG", "")
+OUT = ROOT / "outputs" / TAG if TAG else ROOT / "outputs"
+OUT.mkdir(parents=True, exist_ok=True)
 
-INSTRUCT = "Qwen/Qwen2.5-1.5B-Instruct"
-BASE = "Qwen/Qwen2.5-1.5B"
-DEVICE = "mps" if torch.backends.mps.is_available() else "cpu"
-DTYPE = torch.bfloat16
+INSTRUCT = os.environ.get("MODEL_ID", "Qwen/Qwen2.5-1.5B-Instruct")
+BASE = os.environ.get("BASE_ID", "Qwen/Qwen2.5-1.5B")
+DEVICE = "cuda" if torch.cuda.is_available() else "mps" if torch.backends.mps.is_available() else "cpu"
+
+
+def free_mem():
+    import gc; gc.collect()
+    if DEVICE == "cuda": torch.cuda.empty_cache()
+    elif DEVICE == "mps": torch.mps.empty_cache()
+# bf16 on Apple GPUs and Ampere+ CUDA (A100/L4/H100); fp16 on older CUDA (T4/P100: no native bf16, so Tiny Aya may overflow -> use A100/L4)
+if DEVICE == "cuda" and not torch.cuda.is_bf16_supported():
+    DTYPE = torch.float16
+    print("WARNING: this GPU has no native bf16; falling back to fp16 (risk of NaN). Prefer an A100/L4.")
+else:
+    DTYPE = torch.bfloat16 if DEVICE != "cpu" else torch.float32
+print(f"[common] device={DEVICE} dtype={str(DTYPE).split('.')[-1]}")
 
 # Substring refusal detector (Zou et al. 2023 / Arditi et al. 2024 style).
 REFUSAL_PREFIXES = [
@@ -50,7 +64,7 @@ def generate(tok, model, prompts, max_new_tokens=64, bs=32, use_chat=True):
     outs = []
     texts = chat(tok, prompts) if use_chat else prompts
     for i in range(0, len(texts), bs):
-        enc = tok(texts[i:i + bs], return_tensors="pt", padding=True).to(DEVICE)
+        enc = tok(texts[i:i + bs], return_tensors="pt", padding=True, add_special_tokens=False).to(DEVICE)
         g = model.generate(**enc, max_new_tokens=max_new_tokens, do_sample=False,
                            pad_token_id=tok.pad_token_id)
         outs += tok.batch_decode(g[:, enc["input_ids"].shape[1]:], skip_special_tokens=True)

@@ -17,4 +17,4 @@ for a in alphas:
     print(f"alpha={a} patched in {time.time()-t:.0f}s", flush=True)
     res[str(a)] = eval_all(tok, patched, n_harm=100, n_adv=50, n_gsm=75)
     json.dump(res, open(OUT / "s03_safetune_resta.json", "w"), indent=2)
-    del drifted, base, aligned, patched; torch.mps.empty_cache()
+    del drifted, base, aligned, patched; free_mem()

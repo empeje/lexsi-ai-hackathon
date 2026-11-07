@@ -30,4 +30,4 @@ for name, mk in CFG.items():
         print(name, "FAILED", res[name]["error"], flush=True)
     json.dump(res, open(OUT / "s04_safetune_methods.json", "w"), indent=2)
     for v in ("d", "b", "a", "m", "out"): globals().pop(v, None)
-    torch.mps.empty_cache()
+    free_mem()

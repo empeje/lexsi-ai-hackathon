@@ -10,3 +10,5 @@ paper/*.out
 paper/*.toc
 paper/*.bbl
 paper/*.blg
+outputs/gens/
+outputs/tiny-aya/
