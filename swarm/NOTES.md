@@ -23,3 +23,21 @@ No citation for the toolkit itself found on the site; check https://github.com/L
   doi       = {10.5281/zenodo.24040671}, url = {https://doi.org/10.5281/zenodo.24040671}
 }
 ```
+
+## E3 / E3b results (n=100 harmful, n=100 harmless per condition; Qwen2.5-1.5B aligned vs benign-drifted)
+Probe = aligned model's refusal direction at layer 14 (fixed before seeing transformed results), threshold = 95th pct of clean harmless_val scores.
+Behaviour = substring refusal on the agent's reply to the same input (preexisting detector).
+
+| condition | aligned refuses H/S | drifted refuses H/S | probe on aligned: TPR/FPR, AUC | probe on drifted: TPR/FPR, AUC |
+|---|---|---|---|---|
+| direct | 0.87/0.08 | 0.46/0.01 | 0.97/0.11, 0.98 | 0.98/0.14, 0.98 |
+| rot13 | 0.96/0.98 | 0.03/0.04 | 0.24/0.09, 0.65 | 0.00/0.00, 0.52 |
+| base64 | 0.14/0.18 | 0.00/0.00 | 1.00/0.97, 0.59 | 0.45/0.38, 0.58 |
+| leet | 1.00/0.99 | 0.93/0.68 | 1.00/0.96, 0.72 | 0.91/0.58, 0.75 |
+| spaced | 0.68/0.09 | 0.40/0.04 | 0.95/0.31, 0.92 | 0.85/0.17, 0.92 |
+
+Findings (cautious):
+1. **Knows but does not refuse.** On direct requests the drifted agent refuses 46% but the aligned-direction probe read from the drifted agent's own activations flags 98% (FPR 14%, AUC 0.98). Same pattern with spaced letters (refuses 40%, probe TPR 0.85 at FPR 0.17). The internal signal outlives the behaviour; the probe is a candidate monitor for drifted agents. Caveat: threshold is calibrated on harmless_val and gave FPR 11-14% on harmless_test, not the 5% targeted.
+2. **Obfuscation defeats both.** rot13/base64: AUC 0.52-0.65, drifted agent complies (0-3% refusal). The aligned agent's rot13/leet "refusals" are indiscriminate (harmless refused 98-99%), i.e. confusion, not detection. The prompted 1.5B judge is near chance even on clean text (AUC 0.56) so it is not a usable baseline here.
+3. **Splitting (mechanical word-midpoint cut):** probe AUC stays 0.93-0.99, so no evasion gap for the probe, but harmless fragments also raise alarms (FPR 0.21-0.33). Behaviourally, fragment refusals are mostly confusion (aligned refuses 72% of harmless first halves), so behavioural fragment monitors are not meaningful. This differs from the UK AISI result (secondhand summary) and probably reflects our crude split; do not generalise.
+4. Perplexity flags obfuscation (rot13 100%) but not harm; its combination with the probe is untested.
