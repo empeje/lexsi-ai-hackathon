@@ -4,7 +4,7 @@ import json, os, sys, base64, codecs
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from circuits import *   # preexisting: load_model, generate, is_refusal, jload, INSTRUCT, ROOT, free_mem
 RES = os.path.join(os.path.dirname(__file__), "results")
-N = 100
+N = int(os.environ.get("N", 100)); SUFFIX = os.environ.get("SUFFIX", "")
 LEET = str.maketrans("aeiostAEIOST", "431057431057")
 T = {"direct": lambda s: s, "rot13": lambda s: codecs.encode(s, "rot13"), "base64": lambda s: base64.b64encode(s.encode()).decode(),
      "leet": lambda s: s.translate(LEET), "spaced": lambda s: " ".join(s)}
@@ -24,5 +24,5 @@ for name, path in [("instruct", INSTRUCT), ("drifted", str(ROOT / "outputs" / "m
         out[name][k] = {"refuse_harmful": rh, "refuse_harmless": rs}
         print(name, k, "harmful refused", sum(rh) / N, "harmless refused", sum(rs) / N, flush=True)
     del model; free_mem()
-json.dump(out, open(os.path.join(RES, "e3b_behavior.json"), "w"))
+json.dump(out, open(os.path.join(RES, f"e3b_behavior{SUFFIX}.json"), "w"))
 print("DONE")

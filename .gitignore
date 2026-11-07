@@ -13,3 +13,5 @@ paper/*.blg
 outputs/gens/
 outputs/tiny-aya/
 hf_release/
+
+swarm/results/private/

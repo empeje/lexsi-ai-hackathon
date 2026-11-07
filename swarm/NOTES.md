@@ -67,3 +67,7 @@ Findings (cautious, n=100 so +/-~10 points):
 4. Anomalies we cannot explain: a refusing peer reply lowered aligned refusal (.67) and a compliant opener raised drifted refusal (.67). Possibly the substring detector interacting with the framing; generations were not saved, so this is unchecked. Treat contagion as "not detected", not "absent".
 
 3-D chains (e4_chain_extra.json): ADDD refusal [.87,.51,.61,.48] answered .64; DDDA [.46,.52,.51,.70] answered .69. Union by #D: 0:.34, 1:.54-.60, 2:.63, 3:.64-.69, 4:.72.
+
+## E4b at n=200 (replaces the n=100 control; same sample seed family, generations saved locally in swarm/results/private/, gitignored)
+Refusal rate: aligned none .90, neutral .845, peer-refuses .705, peer-complies .825; drifted none .555, neutral .62, peer-refuses .44, peer-complies .69.
+The n=100 anomalies persist at n=200, so they are not noise: a refusing peer reply LOWERS refusal in both agents. Reading reply openers: aligned agents open with "Certainly! Here's..." more often after a refusing peer (12 vs 6 non-refusal replies), consistent with a take-over/second-opinion effect of the wrapper ("please respond to the request"), and many non-refusals are soft deflections ("It seems like", "It's important to", "There is no...") that the substring detector misses. Interpretation: framing changes how the agent reads its role; this is NOT contagion of the peer's stance.

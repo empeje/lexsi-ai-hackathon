@@ -11,7 +11,7 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), ".."))
 from circuits import *   # preexisting: load_model, generate, is_refusal, jload, INSTRUCT, ROOT, free_mem
 
 RES = os.path.join(os.path.dirname(__file__), "results")
-N, LEN, MAXTOK = 100, 4, 48
+N, LEN, MAXTOK = int(os.environ.get("N", 100)), 4, 48
 harm = jload("harmful_test.json", N, seed=1)      # same sample as e3 / e3b
 
 class LocalAgent:
