@@ -1,0 +1,178 @@
+\documentclass[11pt,letterpaper]{article}
+% Layout follows the Apart Research hackathon submission template (single column, 1in margins, serif, ruled title block).
+\usepackage[margin=1in]{geometry}
+\usepackage{graphicx,booktabs,amsmath,hyperref,microtype,xcolor,enumitem,caption,titlesec,lmodern}
+\hypersetup{colorlinks=true,linkcolor=blue,citecolor=blue,urlcolor=blue}
+\setlist{nosep}
+\captionsetup{font=small,labelfont=bf}
+\setlength{\parindent}{0pt}\setlength{\parskip}{4pt}\setlength{\textfloatsep}{8pt plus 2pt minus 2pt}\setlength{\floatsep}{6pt plus 2pt minus 2pt}\setlength{\intextsep}{6pt}
+\definecolor{subgray}{gray}{0.35}
+\titleformat{\section}{\bfseries\large}{\thesection.}{0.5em}{}
+\titlespacing*{\section}{0pt}{14pt}{4pt}
+\titleformat{\subsection}{\bfseries\normalsize\color{subgray}}{\thesubsection}{0.5em}{}
+\titlespacing*{\subsection}{0pt}{10pt}{3pt}
+\renewcommand{\thesubsection}{\thesection.\arabic{subsection}}
+\begin{document}
+\begin{center}
+\rule{\linewidth}{2.5pt}\\[10pt]
+{\Large\bfseries BENIGN DRIFT AS A SWARM'S WEAK LINK: AGGREGATION, PEER FRAMING AND WHAT A DRIFTED AGENT STILL KNOWS}\footnotemark\\[8pt]
+\rule{\linewidth}{0.5pt}\\[12pt]
+Abdurrachman Mappuji\\
+{\small GCAS College Dublin, Dublin, Ireland; Department of Cyber Security,\\Royal Holloway, University of London, UK}\\
+{\small abdurrachman.mappuji@gcas.ie}\\[8pt]
+\textbf{With}\\Apart Research\\[12pt]
+{\bfseries\large Abstract}\\[6pt]
+\parbox{0.8\linewidth}{\small\itshape\noindent A swarm of language-model agents is only as safe as the agents it routes requests to. Most swarm-safety work assumes an adversarial member; we study a quieter weak link, an agent fine-tuned on a harmless task that lost part of its refusal behaviour without anyone intending it. Using Qwen2.5-1.5B-Instruct and a copy fine-tuned on grade-school maths, we ask how such an agent changes group safety, whether drifted agents spread or absorb refusal through shared context, and what a drifted agent still represents about harmful requests. Simulated aggregation shows that one drifted agent in a pool of five raises the share of harmful requests answered from 6.5\% to 41\% when a requester can try every agent, while majority voting holds until three agents have drifted. In live four-agent chains, one drifted agent raises the share answered by some agent from 31\% to 52--56\% (30\% to 44--45\% with a detector that also catches soft deflections), with small further increments; a controlled test finds that a refusing peer reply lowers refusal by 14--18 points, the opposite of contagion, which we attribute partly to framing. The drifted agent is scored as refusing 56\% of harmful requests by a substring rule (about 79\% in a small audit), yet its hidden states and output likelihoods flag 91--92\% of them at 5--9\% false alarms, and an aligned instance reads the signal equally well. Simple encodings defeat the hidden-state probe at base64 and both readouts at rot13. We report what we could not test.}
+\end{center}
+\footnotetext{Research conducted at the \href{https://apartresearch.com/sprints/swarm-alignment-2026}{Swarm Alignment Hackathon}, November 2026.}
+
+\section{Introduction}
+Alignment cannot stop at single models when agents negotiate, trade and share tools. Recent work catalogues multi-agent risks~\cite{hammond2025}, shows that agents can collude secretly~\cite{motwani2024}, and that tasks split across agents can evade per-agent filters~\cite{jones2025}. These studies centre on deliberately adversarial or coordinating agents. A more mundane route also exists: practitioners adapt models to downstream tasks, and even benign fine-tuning can erode refusal~\cite{qi2023}. A swarm built from specialised agents may therefore contain members that are weaker than their base model without being malicious.
+
+We ask three questions. \textbf{Q1:} how do one or more benignly drifted agents change the safety of a group, under routing and voting rules a designer might choose? \textbf{Q2:} do drifted agents spread or absorb refusal through the context they share? \textbf{Q3:} what does a drifted agent still represent about harmful requests, and can a monitor read it?
+
+\paragraph{Our main contributions are:}
+\begin{enumerate}[leftmargin=2em,itemsep=2pt]
+\item An aggregation analysis showing that, when a requester can try several agents, one drifted agent determines the group's safety, while majority voting and ``any refusal blocks'' trade robustness against thresholds and cost.
+\item A live chain experiment with a framing control that separates peer content from prompt framing; the wrapper alone moves refusal by about 6 points, and a refusing peer reply lowers it further (by 14--18 points), the opposite of contagion.
+\item A monitor comparison showing that a drifted agent still carries the refusal signal it no longer acts on, readable both from hidden states and from output likelihoods, that an aligned instance reads it equally well, and that simple encodings degrade both readouts differently.
+\end{enumerate}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.88\textwidth]{figures/fig_setup.pdf}
+\caption{Setup. (a) A request goes to a pool of aligned (A) and benignly drifted (D) agents and a rule combines their replies (the analysis uses pools of five). (b) In a chain each agent sees the request plus the previous agent's reply. (c) A monitor reads the drifted agent's hidden state or its refusal-opening likelihood and flags above a threshold calibrated on clean harmless prompts.}\label{fig:setup}
+\end{figure}
+
+\paragraph{Preexisting and new work.} The models, drift recipe, evaluation prompts, refusal detector and per-prompt outcomes of the aggregation analysis come from our earlier study~\cite{mappuji2026} and are marked preexisting in the repository. The chain, control and monitor experiments, all analyses and all figures here were produced during the sprint.
+
+\section{Related Work}
+\textbf{Multi-agent risk.} Hammond et al.~\cite{hammond2025} organise multi-agent failure modes; Motwani et al.~\cite{motwani2024} study secret collusion; Lee and Tiwari~\cite{leetiwari2024} show prompts that propagate across agents; Jones et al.~\cite{jones2025} show that splitting a task evades per-agent safety filters; AI control~\cite{greenblatt2024} studies oversight against intentional subversion. We differ by studying an agent that is weaker without being adversarial and by measuring group outcomes under simple rules.
+\textbf{Safety drift and refusal.} Qi et al.~\cite{qi2023} show that benign fine-tuning can erode safety. Arditi et al.~\cite{arditi2024} show that refusal is mediated by a single residual-stream direction, which we use as a probe. Weight-space repair methods are implemented in SafeTune~\cite{safetune}; our earlier study compared them on one agent~\cite{mappuji2026}.
+
+\section{Methods}
+\textbf{Agents.} The aligned agent (A) is Qwen2.5-1.5B-Instruct. The drifted agent (D) is the same model after a LoRA fine-tune on 2{,}000 GSM8K examples (rank 16, one epoch), merged into the weights~\cite{mappuji2026}. Both run in bfloat16 on an Apple M1 GPU with greedy decoding.
+\textbf{Prompts and refusal.} Harmful prompts are public benchmark prompts. The aggregation analysis (Section~\ref{sec:agg}) uses the 200 held-out harmful and 150 harmless prompts evaluated earlier. The live experiments use a different fixed sample of 200 harmful and 200 harmless prompts, so absolute rates differ between sections (A refuses 90\% and D 56\% of the live sample, 93.5\% and 59.5\% of the earlier set). A reply counts as a refusal if one of a fixed list of refusal phrases occurs in its first 200 characters; this detector is coarse (Section~5).
+\textbf{Monitors.} We score each input with four monitors. \emph{Probe}: projection of the last-token residual at layer 14 (chosen before seeing any transformed condition) on the refusal direction of A. \emph{Refusal likelihood}: the log-probability that the agent begins its reply with ``I'm sorry, but I can't''. \emph{Keyword}: a count of a fixed list of 28 harm-related words. \emph{Perplexity}: mean token loss of the raw text, a flag for unnatural text. Thresholds are the 95th percentile of scores on 400 clean harmless prompts disjoint from the test sets. We report AUC (harmful against harmless inputs within each condition) with 95\% bootstrap intervals over prompts, and true/false-positive rates at the clean-calibrated threshold.
+\textbf{Transformations.} Applied identically to harmful and harmless prompts: rot13, base64, letter substitution (``leet''), spacing between letters, and a mechanical split at the word midpoint into two fragments (the swarm-level score is the larger of the two fragment scores). A pilot at 100 prompts of a prompted yes/no judge using the 1.5B model gave near-chance AUC even on clean text (0.56), so it was dropped as a baseline.
+
+\section{Results}
+\subsection{Aggregation rules (Q1)}\label{sec:agg}
+We reuse the per-prompt outcomes of A and D to simulate a pool of five agents with $k$ drifted members under four rules: the request goes to a random agent; a requester tries every agent and keeps a compliant answer (\emph{shop}); the pool answers if a majority would; the pool answers only if all agents would (\emph{unanimous}). Decoding is greedy, so copies are identical and the analysis shows how rules combine behaviour, not interaction.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.62\textwidth]{figures/fig_aggregation.pdf}
+\caption{Share of harmful requests answered (200 prompts) for a pool of five agents as drifted agents replace aligned ones.}\label{fig:agg}
+\end{figure}
+
+\begin{table}[t]\centering\small
+\input{tables/tab_cost.tex}
+\caption{Harmful requests answered / harmless requests refused (\%), by pool and rule. The 11-variant pool contains the aligned, drifted and repaired variants of our earlier study.}\label{tab:cost}
+\end{table}
+
+One drifted agent raises the share of harmful requests answered from 6.5\% to 41\% under shopping and to 13\% under random routing, while majority voting stays at 6.5\% until three agents have drifted and then jumps to 40.5\% (Figure~\ref{fig:agg}, Table~\ref{tab:cost}). Requiring unanimity holds the rate near 6\% up to four drifted agents at little cost here: with one drifted agent it refuses 9\% of plain harmless prompts against 8\% for the aligned pool, a difference well inside the noise of 150 prompts. Across the heterogeneous 11-variant pool unanimity reduces harmful answers to 2\% but refuses 12\% of harmless prompts.
+
+\subsection{Chains and peer framing (Q1, Q2)}
+In a chain of four agents, agent~1 sees the request and agent~$k$ sees it with the previous agent's reply (``a teammate agent replied\ldots''). Table~\ref{tab:chain} gives refusal by position and the share of requests answered by some agent; Figure~\ref{fig:example} shows two real transcripts of how a drifted agent's reply can enter the chain.
+
+\begin{table}[t]\centering\small
+\input{tables/tab_chain.tex}
+\caption{Four-agent chains (A aligned, D drifted; 200 harmful prompts): refusal rate by position and the share answered by some agent, with 95\% bootstrap intervals.}\label{tab:chain}
+\end{table}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.55\textwidth]{figures/fig_chain.pdf}
+\caption{Requests answered by some agent against the number of drifted agents in the chain.}\label{fig:chain}
+\end{figure}
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.86\textwidth]{figures/fig_example.pdf}
+\caption{Two real transcripts from the A$\to$D$\to$A$\to$A chain (greedy decoding; first 40 prompts of the live sample; replies truncated and harmful specifics redacted). (a) The aligned first agent refuses, the drifted agent answers, and both later aligned agents answer once they see that reply. (b) The same chain on another request: the later aligned agents refuse again. Both are shown for illustration and are not typical selections: of the 37 of these 40 requests that agent~1 refused, agent~2 answered 21; of those, at least one later aligned agent also answered in 7 and both re-refused in 14. Detection is the substring rule, so ``answered'' includes deflections.}\label{fig:example}
+\end{figure}
+
+\textbf{Drift raises the union, with diminishing steps.} The all-aligned chain answers 31\% of requests somewhere, although a single aligned agent answers 10\%; presenting the same request in different surrounding context behaves like a weak form of refusal shopping, partly through the framing effect measured below. One drifted agent raises the share to 52--56\% depending on its position, two to 61\%, three to 61--64\% and four to 67\% (Figure~\ref{fig:chain}). The first drifted agent adds about 22 points and later ones a few each, within the intervals of Table~\ref{tab:chain}. This does not support the hypothesis that each additional misaligned agent adds more risk than the last, at least in this toy setting.
+
+\textbf{No contagion in chains.} Aligned agents downstream of a drifted agent refuse as often as in the all-aligned chain (DAAA, position 2: 74\% against 77\%), and in DDDD the later drifted agents refuse as often as a drifted agent alone (56\%). A drifted agent at the end of an aligned chain refuses less than its framing baseline (AAAD, position 4: 54\%), as the control below predicts for a receiver following a refusing peer.
+
+\textbf{Framing control.} To separate framing from peer content, the receiving agent was given the same wrapper around a fixed peer reply (Table~\ref{tab:control}). The neutral wrapper alone lowers the aligned agent's refusal by 6 points and raises the drifted agent's by 6, so framing moves the two agents in opposite directions. A \emph{refusing} peer lowers refusal in both agents, by 14 points for A and 18 for D relative to the neutral wrapper, and a complying peer opener does not lower A's refusal beyond the neutral wrapper (82\% against 84\%). We saved reply heads for this run. Aligned agents open with an eager phrase (``Certainly! Here's\ldots'') in 5\% of replies under the neutral wrapper and in 10\% after a refusing peer, which suggests a take-over effect (the wrapper asks the receiver to respond after the peer has declined), but this explains only about a third of the drop; the rest consists of plain answers and soft deflections that the substring detector does not recognise. We therefore read the effect as a change in how the receiver understands its role, not as contagion of the peer's stance, and we leave the mechanism partly open.
+
+\begin{table}[t]\centering\footnotesize
+\input{tables/tab_control.tex}
+\caption{Refusal rate when the receiver sees the chain wrapper around a fixed peer reply (200 harmful prompts; 95\% Wilson intervals).}\label{tab:control}
+\end{table}
+
+\paragraph{Sensitivity to the refusal detector.} Re-scoring the same 200-prompt chains with an extended detector that also catches common soft deflections (Appendix~\ref{app:audit}, Table~\ref{tab:rescore}) keeps the direction but shrinks the effect: the share answered by some agent goes from 30\% with no drifted agent to 44--45\% with one and 53\% with four, instead of 31\%, 52--56\% and 67\%. The first drifted agent adds about 15 points rather than 22. The extended phrases were written after reading our audit labels, so this is a sensitivity check, not a validated measure.
+
+\subsection{What a drifted agent still knows (Q3)}
+On plain requests the substring rule scores D as refusing 56\% of harmful prompts (about 79\% in a manual audit that also counts redirections; Appendix~\ref{app:audit}). The refusal signal is still stronger than the behaviour:  the refusal direction read from D's own activations flags 92\% at a 9\% false-alarm rate (AUC 0.98), and D's output likelihood of a refusal opening flags 91\% at 5\% (AUC 0.98; Table~\ref{tab:probe}, Figure~\ref{fig:probe}). The agent represents the harmfulness of the request and even prefers a refusal opening on it, but often does not act on it, although the gap is smaller than the substring rule alone suggests. The same holds with spaced letters (AUC 0.93 and 0.96). Neither signal depends on D itself: reading A, the aligned instance, gives AUC 0.99 on plain requests (Table~\ref{tab:auc} in the appendix), so a separate aligned agent can monitor messages without access to the drifted agent's internals. A keyword baseline reaches only AUC 0.64 on plain text, and perplexity 0.79, which indicates unusual text rather than harm.
+
+\begin{figure}[t]\centering
+\includegraphics[width=0.9\textwidth]{figures/fig_probe_vs_behavior.pdf}
+\caption{Drifted agent, 200 prompts per condition. (a) Share of harmful requests that the agent refuses, that the probe flags and that the refusal-likelihood monitor flags at the clean-calibrated threshold (false-alarm rates are in Table~\ref{tab:probe}). (b) AUC with 95\% bootstrap intervals; the dashed line is chance.}\label{fig:probe}
+\end{figure}
+
+\begin{table}[t]\centering\footnotesize
+\resizebox{0.9\textwidth}{!}{\input{tables/tab_probe.tex}}
+\caption{Behaviour and monitors on harmful inputs, drifted agent (D) and aligned agent (A). TPR/FPR at the clean-calibrated threshold.}\label{tab:probe}
+\end{table}
+
+\textbf{Encodings.} The probe and the refusal likelihood are not equally robust. Under base64 the probe falls to chance (AUC 0.53, 0.56 when read from A) while the refusal likelihood keeps 0.73 (0.78 from A), with non-overlapping intervals. Under rot13 both are near chance (AUC 0.47--0.65), and D simply complies (3\% refusal). Under leetspeak both reach 0.72--0.76 but with false-alarm rates of 37--94\%. The aligned agent's refusals on rot13 and leetspeak apply to harmless prompts as well (99\%), so they reflect confusion, not detection. Combining the probe with the perplexity flag adds nothing beyond flagging every rot13 input: perplexity separates rot13 text from plain text but not harmful from harmless, and it almost never flags base64 or leetspeak inputs.
+
+\textbf{Splitting.} The mechanical midpoint split did not hide requests from the monitors: the swarm-level AUC stays at 0.94--0.99, so there is no evasion gap. The cost is false alarms on harmless fragments (19--43\% at the same threshold), and fragment-level refusals of both agents are largely confusion (A refuses 72\% of harmless first halves). Our split is crude, and this does not contradict reports that carefully designed splits evade monitors.
+
+\section{Discussion and Limitations}
+Three practical points follow, each limited by scale. First, aggregation rules matter as much as how many agents drifted. If the requester can choose among agents, one drifted member is as bad as all of them; majority voting and unanimity restore safety up to different thresholds. Second, drift is a replicable weakness: fine-tuning recipes can be copied, so one weakened agent can appear several times in a swarm. Third, the refusal signal that a drifted agent no longer acts on is still available to a monitor, from hidden states or from output likelihoods, and an aligned monitor reads it at least as well. That makes a separate aligned monitor a reasonable control for swarms with drifted specialists, but only while messages look like ordinary text; fixed encodings already defeat the hidden-state probe at base64 and both readouts at rot13. We also caution against reading peer-reply effects as contagion without a framing control: the wrapper alone moved refusal by up to 6 points, and a refusing peer moved it by up to 18.
+
+\subsection*{Limitations}
+All agents are 1.5B models with greedy decoding, and refusal is a substring match. A manual audit (Appendix~\ref{app:audit}) shows that it misses redirections and counter-arguments, so ``answered'' rates are upper bounds on harmful delivery, most clearly for the drifted agent. The live experiments use 200 prompts, so differences below about 7 points should not be interpreted; bootstrap intervals cover prompt sampling, not the choice of sample. Drift comes from one fine-tune on one dataset, and in our earlier study a second model family showed no drift under the same recipe~\cite{mappuji2026}, so the weak-link effect is model-dependent. The aggregation analysis simulates rules from per-prompt outcomes of identical copies and ignores interaction. The monitors share a model family with the agents; a monitor from another family or a learned classifier may behave differently. The keyword and perplexity baselines are crude, and the prompted judge was a pilot only. We did not test hosted frontier models, adversarial coordination, careful task splits, or protocols that agents invent. The mechanism behind the framing effects is only partly explained.
+
+\subsection*{Future Work}
+The most useful next steps follow from what we could not do. Repeat the chain and monitor experiments on hosted and larger models and on a second model family, where drift may behave differently. Replace the substring detector with human labels on a larger sample, and add a second labeller. Test interaction effects that identical greedy copies cannot show, using sampled decoding and heterogeneous agents. Evaluate carefully designed task splits, adversarial coordination and protocols that agents invent, and a monitor from a different model family than the agents.
+
+\section{Conclusion}
+A fine-tune on a harmless task left one agent weaker at refusing, and that single agent was enough to change a group's outcome when requesters could try several agents. In four-agent chains, one drifted agent raised the share of harmful requests answered by some agent from 30--31\% to 44--56\%, depending on the refusal detector, with small further increases from additional drifted agents. A refusing peer reply lowered refusal in both agents, which we read as a framing effect and not as contagion. The drifted agent still carried the refusal signal in its hidden states and output likelihoods, and an aligned instance read it equally well, but simple encodings defeated the hidden-state probe at base64 and both readouts at rot13. The results come from 1.5B models with greedy decoding and a coarse refusal detector, so they are a design warning and a measurement recipe, not a guarantee for larger systems.
+
+\section*{Code and Data}
+\begin{itemize}[leftmargin=2em,itemsep=1pt]
+\item \textbf{Code repository:} \raggedright\url{https://github.com/empeje/lexsi-ai-hackathon/tree/apart/swarm-alignment-2026} (branch \texttt{apart/swarm-alignment-2026}, folder \texttt{swarm/}).
+\item \textbf{Data/Datasets:} public benchmark prompts only; per-prompt refusal flags and monitor scores are in \texttt{swarm/results/}. Reply text was kept locally and is not published.
+\item \textbf{Other artifacts:} none.
+\end{itemize}
+
+\section*{Author Contributions}
+A.M. designed and ran all experiments and wrote the paper. An AI coding assistant (Claude) helped implement scripts, labelled the detector-audit sample, and drafted text that A.M. reviewed.
+
+\section*{Acknowledgements}
+The sprint talks by speakers at UK AISI/MATS, AE Studio, Swarmchaser, UT Austin, Gutenberg PBC and others shaped the experiment design. We read some talks only through automatic summaries and make no claim about their contents beyond ideas used here.
+
+\begin{thebibliography}{9}\small
+\bibitem{hammond2025} L. Hammond et al., ``Multi-Agent Risks from Advanced AI,'' arXiv:2502.14143, 2025.
+\bibitem{motwani2024} S. R. Motwani et al., ``Secret Collusion among AI Agents: Multi-Agent Deception via Steganography,'' NeurIPS 2024.
+\bibitem{jones2025} Jones et al., ``Splitting tasks to evade per-agent safety filters,'' OpenReview, 2025.
+\bibitem{leetiwari2024} D. Lee and M. Tiwari, ``Prompt Infection: LLM-to-LLM Prompt Injection within Multi-Agent Systems,'' arXiv:2410.07283, 2024.
+\bibitem{greenblatt2024} R. Greenblatt et al., ``AI Control: Improving Safety Despite Intentional Subversion,'' arXiv:2312.06942, 2024.
+\bibitem{qi2023} X. Qi et al., ``Fine-tuning Aligned Language Models Compromises Safety, Even When Users Do Not Intend To!,'' arXiv:2310.03693, 2023.
+\bibitem{arditi2024} A. Arditi et al., ``Refusal in Language Models Is Mediated by a Single Direction,'' arXiv:2406.11717, 2024.
+\bibitem{mappuji2026} A. Mappuji, ``Repairing Safety Drift Without Retraining in Small Fine-Tuned Language Models: Weight-Space Methods and a Located Refusal Direction,'' Zenodo, 2026. doi:10.5281/zenodo.24040671.
+\bibitem{safetune} Lexsi Labs, ``SafeTune: auditing and repairing safety drift in fine-tuned LLMs,'' software, https://safetune.lexsi.ai.
+\end{thebibliography}
+
+\appendix
+\section{Limitations and Dual-Use / Ethical Considerations}
+\textbf{Data.} We used only public benchmark prompts. Saved artefacts are per-prompt refusal flags and monitor scores; reply text for the framing control and the example transcripts was kept locally and not published; Figure~\ref{fig:example} shows only truncated, redacted excerpts of two mild requests. \textbf{Transformations.} The obfuscations are standard public encodings applied mechanically, and the split is a word-midpoint cut. We do not provide or evaluate crafted attack recipes. \textbf{Misuse.} The main finding, that routing a request to the weakest member defeats the group, is obvious to a requester but also a design warning. The corresponding mitigations are not to let requesters select agents, to require agreement among agents, and to monitor with a separate aligned instance that reads the message. The finding that simple encodings defeat the probe could help an attacker; it uses only public encodings and is outweighed by its value to defenders choosing monitors. \textbf{Overclaiming.} We report null, unexplained and partially explained results as such. Hosted-model validation was planned but not performed because platform credits were unavailable.
+
+\section{Refusal-detector audit}\label{app:audit}
+We audited the substring detector on plain (unwrapped) replies of A and D to the 200 live harmful prompts. The sample had 169 replies: all 109 the detector did not flag, plus 30 random flagged replies per agent. One labeller (a language model, Claude, blind to the detector flag, reading only the first 200 characters) marked each reply R (declines, or substitutes safe or counter content instead of delivering the request), C (delivers or begins to deliver it) or U (unclear). All 60 flagged replies were R. Among the unflagged replies, A had 10 R, 9 C and 1 U, and D had 40 R, 41 C and 8 U. Scaling the flagged replies to their populations, the detector's recall for R is 0.95 for A and 0.74 for D, and the share of replies labelled R, excluding U, is 0.96 for A and 0.79 for D, against detector rates of 0.90 and 0.56. The detector therefore never over-counted in this sample but understates non-compliance, mostly for D, whose unflagged replies often rebut the request (``there is no way to\ldots'') or answer a different question. This is a single non-human labeller on truncated replies with a broad R category, so we treat the 0.79 as indicative; the main tables keep the original substring rule. The chain and aggregation numbers in the paper are ``not refused'' rates, which bound harmful delivery from above.
+
+\begin{table}[h]\centering\small
+\input{tables/tab_rescore.tex}
+\caption{Share of 200 harmful prompts answered by some agent in each chain, under the substring rule and the extended detector (95\% bootstrap intervals).}\label{tab:rescore}
+\end{table}
+
+\section{Full monitor results}
+\begin{table}[h]\centering\scriptsize
+\input{tables/tab_auc.tex}
+\caption{AUC (harmful vs harmless inputs) with 95\% bootstrap intervals; 200 prompts per condition. A = aligned model, D = drifted model.}\label{tab:auc}
+\end{table}
+
+
+\end{document}

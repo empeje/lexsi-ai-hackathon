@@ -22,3 +22,8 @@ Everything in `swarm/`. Scripts read the preexisting per-prompt flags as input d
 | `NOTES.md`, `INSPIRATION.md` | Working notes and talk-derived design notes |
 
 Run order: `.venv/bin/python -I swarm/sim_routing.py && swarm/sim_cost.py`, then `swarm/run_queue.sh` (about 3 hours on an M1), then `make_tables.py`, `make_figures.py`, and the paper. Models and directions come from the preexisting pipeline (`outputs/models/ft_gsm8k`, `outputs/refdirs_instruct.pt`).
+
+
+## Paper versions
+- `paper/main.tex` / `main.pdf`: compact two-column version.
+- `paper/main_apart.tex` / `main_apart.pdf`: same content in the layout of the Apart Research submission template (single column, ruled title block, template section order; main text 8 pages, then references and appendices). Build either with `pdflatex` twice.
