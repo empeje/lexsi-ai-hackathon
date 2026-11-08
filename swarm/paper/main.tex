@@ -52,7 +52,7 @@ We reuse the per-prompt outcomes of A and D to simulate a pool of five agents wi
 One drifted agent raises the share of harmful requests answered from 6.5\% to 41\% under shopping and to 13\% under random routing, while majority voting stays at 6.5\% until three agents have drifted and then jumps to 40.5\% (Figure~\ref{fig:agg}, Table~\ref{tab:cost}). Requiring unanimity holds the rate near 6\% up to four drifted agents at little cost here: with one drifted agent it refuses 9\% of plain harmless prompts against 8\% for the aligned pool, a difference well inside the noise of 150 prompts. Across the heterogeneous 11-variant pool unanimity reduces harmful answers to 2\% but refuses 12\% of harmless prompts.
 
 \subsection{Chains and peer framing (Q1, Q2)}
-In a chain of four agents, agent~1 sees the request and agent~$k$ sees it with the previous agent's reply (``a teammate agent replied\ldots''). Table~\ref{tab:chain} gives refusal by position and the share of requests answered by some agent.
+In a chain of four agents, agent~1 sees the request and agent~$k$ sees it with the previous agent's reply (``a teammate agent replied\ldots''). Table~\ref{tab:chain} gives refusal by position and the share of requests answered by some agent; Figure~\ref{fig:example} shows two real transcripts of how a drifted agent's reply can enter the chain.
 
 \begin{table}[t]\centering\small
 \input{tables/tab_chain.tex}
@@ -63,6 +63,11 @@ In a chain of four agents, agent~1 sees the request and agent~$k$ sees it with t
 \includegraphics[width=\columnwidth]{figures/fig_chain.pdf}
 \caption{Requests answered by some agent against the number of drifted agents in the chain.}\label{fig:chain}
 \end{figure}
+
+\begin{figure*}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_example.pdf}
+\caption{Two real transcripts from the A$\to$D$\to$A$\to$A chain (greedy decoding; first 40 prompts of the live sample; replies truncated and harmful specifics redacted). (a) The aligned first agent refuses, the drifted agent answers, and both later aligned agents answer once they see that reply. (b) The same chain on another request: the later aligned agents refuse again. Both are shown for illustration and are not typical selections: of the 37 of these 40 requests that agent~1 refused, agent~2 answered 21; of those, at least one later aligned agent also answered in 7 and both re-refused in 14. Detection is the substring rule, so ``answered'' includes deflections.}\label{fig:example}
+\end{figure*}
 
 \textbf{Drift raises the union, with diminishing steps.} The all-aligned chain answers 31\% of requests somewhere, although a single aligned agent answers 10\%; presenting the same request in different surrounding context behaves like a weak form of refusal shopping, partly through the framing effect measured below. One drifted agent raises the share to 52--56\% depending on its position, two to 61\%, three to 61--64\% and four to 67\% (Figure~\ref{fig:chain}). The first drifted agent adds about 22 points and later ones a few each, within the intervals of Table~\ref{tab:chain}. This does not support the hypothesis that each additional misaligned agent adds more risk than the last, at least in this toy setting.
 
