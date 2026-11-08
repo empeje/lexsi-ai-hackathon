@@ -23,6 +23,11 @@ We ask three questions. \textbf{Q1:} how do one or more benignly drifted agents 
 
 \paragraph{Contributions.} (i) An aggregation analysis showing that, when a requester can try several agents, one drifted agent determines the group's safety, while majority voting and ``any refusal blocks'' trade robustness against thresholds and cost. (ii) A live chain experiment with a framing control that separates peer content from prompt framing; the wrapper alone moves refusal by about 6 points, and a refusing peer reply lowers it further (by 14--18 points), the opposite of contagion. (iii) A monitor comparison showing that a drifted agent still carries the refusal signal it no longer acts on, readable both from hidden states and from output likelihoods, that an aligned instance reads it equally well, and that simple encodings degrade both readouts differently.
 
+\begin{figure*}[t]\centering
+\includegraphics[width=\textwidth]{figures/fig_setup.pdf}
+\caption{Setup. (a) A request goes to a pool of aligned (A) and benignly drifted (D) agents and a rule combines their replies (the analysis uses pools of five). (b) In a chain each agent sees the request plus the previous agent's reply. (c) A monitor reads the drifted agent's hidden state or its refusal-opening likelihood and flags above a threshold calibrated on clean harmless prompts.}\label{fig:setup}
+\end{figure*}
+
 \paragraph{Preexisting and new work.} The models, drift recipe, evaluation prompts, refusal detector and per-prompt outcomes of the aggregation analysis come from our earlier study~\cite{mappuji2026} and are marked preexisting in the repository. The chain, control and monitor experiments, all analyses and all figures here were produced during the sprint.
 
 \section{Related Work}
