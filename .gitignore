@@ -19,3 +19,10 @@ swarm/paper/*.aux
 swarm/paper/*.log
 swarm/paper/*.out
 .DS_Store
+swarm/slides/*.aux
+swarm/slides/*.log
+swarm/slides/*.nav
+swarm/slides/*.out
+swarm/slides/*.snm
+swarm/slides/*.toc
+swarm/slides/*.vrb

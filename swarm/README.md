@@ -27,3 +27,4 @@ Run order: `.venv/bin/python -I swarm/sim_routing.py && swarm/sim_cost.py`, then
 ## Paper versions
 - `paper/main.tex` / `main.pdf`: compact two-column version.
 - `paper/main_apart.tex` / `main_apart.pdf`: same content in the layout of the Apart Research submission template (single column, ruled title block, template section order; main text 8 pages, then references and appendices). Build either with `pdflatex` twice.
+- `slides/slides.tex` / `slides.pdf`: 13-slide Beamer deck (16:9) built from the paper's figures and tables. Build: `cd swarm/slides && pdflatex slides && pdflatex slides`.

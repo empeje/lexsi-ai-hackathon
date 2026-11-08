@@ -1,0 +1,171 @@
+\documentclass[aspectratio=169,11pt]{beamer}
+% Slides for the Apart Swarm Alignment Sprint 2026 submission. All numbers come from ../paper/main.tex and ../results.
+\usepackage{graphicx,booktabs,xcolor}
+\graphicspath{{../paper/figures/}}
+\definecolor{blu}{HTML}{2A6FDB}\definecolor{ora}{HTML}{D9691C}\definecolor{ink}{HTML}{1B1F24}\definecolor{mut}{HTML}{5B6470}
+\usetheme{default}\usefonttheme{professionalfonts}
+\setbeamercolor{normal text}{fg=ink}\setbeamercolor{structure}{fg=blu}\setbeamercolor{title}{fg=ink}\setbeamercolor{frametitle}{fg=ink}
+\setbeamercolor{footline}{fg=mut}
+\setbeamertemplate{navigation symbols}{}
+\setbeamertemplate{itemize item}{\color{blu}\textbullet}
+\setbeamertemplate{frametitle}{\vskip4pt\usebeamerfont{frametitle}\bfseries\Large\insertframetitle\par\vskip2pt{\color{blu}\rule{\linewidth}{1.2pt}}}
+\setbeamertemplate{footline}{\hfill\scriptsize\color{mut}Benign drift as a swarm's weak link \;|\; \insertframenumber\;\;\vskip6pt}
+\newcommand{\hl}[1]{{\color{ora}\bfseries #1}}
+\title{\bfseries Benign Drift as a Swarm's Weak Link}
+\subtitle{Aggregation, peer framing and what a drifted agent still knows}
+\author{Abdurrachman Mappuji}
+\institute{GCAS College Dublin \,/\, Royal Holloway, University of London}
+\date{Apart Research Swarm Alignment Sprint 2026 \,·\, Track 2: The Science of Agent Networks}
+\begin{document}
+\begin{frame}[plain]\titlepage\end{frame}
+
+\begin{frame}{The problem: a weak link nobody attacked}
+\begin{itemize}\setlength\itemsep{6pt}
+\item Swarm-safety work mostly assumes an \emph{adversarial} agent: collusion, split attacks, infection.
+\item A quieter route: teams fine-tune agents for downstream tasks, and even \hl{benign fine-tuning erodes refusal}.
+\item A swarm of specialists may contain members weaker than their base model, \emph{without being malicious}.
+\end{itemize}
+\vspace{6pt}
+\textbf{Three questions}
+\begin{enumerate}\setlength\itemsep{3pt}
+\item[\textbf{Q1}] How do one or more drifted agents change group safety under routing and voting rules?
+\item[\textbf{Q2}] Do drifted agents spread or absorb refusal through shared context?
+\item[\textbf{Q3}] What does a drifted agent still represent about harmful requests, and can a monitor read it?
+\end{enumerate}
+\end{frame}
+
+\begin{frame}{Setup}
+\centering\includegraphics[width=0.93\linewidth]{fig_setup.pdf}\\[4pt]
+\raggedright\small
+\textbf{Agents:} A = Qwen2.5-1.5B-Instruct; D = same model + LoRA on 2{,}000 GSM8K examples (benign drift). Greedy decoding on an Apple M1.\\
+\textbf{Data:} public benchmark prompts only (200 harmful / 200 harmless live; 200 / 150 for the aggregation analysis). \textbf{Refusal:} substring rule (audited later).
+\end{frame}
+
+\begin{frame}{Q1: one drifted agent can decide the group}
+\begin{columns}[T]
+\column{0.52\linewidth}\includegraphics[width=\linewidth]{fig_aggregation.pdf}\\[2pt]{\scriptsize Simulated from identical greedy copies: it shows how rules combine behaviour, not interaction.}
+\column{0.46\linewidth}\small
+\begin{itemize}\setlength\itemsep{5pt}
+\item Pool of five, $k$ drifted. Harmful requests answered:
+\item \hl{6.5\% $\to$ 41\%} with one drifted agent when the requester tries every agent (13\% for random routing).
+\item Majority vote stays at 6.5\% until three agents have drifted, then jumps to 40.5\%.
+\item Unanimity holds near 6\% up to four drifted agents, at little extra refusal of harmless prompts here.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Q1: live four-agent chains}
+\begin{columns}[T]
+\column{0.5\linewidth}\includegraphics[width=\linewidth]{fig_chain.pdf}
+\column{0.48\linewidth}\small
+Each agent sees the request plus the previous agent's reply. Share answered by \emph{some} agent (200 prompts):
+\begin{itemize}\setlength\itemsep{4pt}
+\item no drifted agent: \hl{31\%}
+\item one drifted agent: \hl{52--56\%}
+\item two to four: 61\% $\to$ 67\%, small steps
+\end{itemize}
+Under an extended detector that also catches soft deflections:
+\begin{itemize}\setlength\itemsep{4pt}
+\item 30\% $\to$ \hl{44--45\%} $\to$ 53\% (four drifted)
+\end{itemize}
+The first drifted agent adds most of the risk; later ones add little.
+\end{columns}
+\end{frame}
+
+\begin{frame}{What it looks like: two real transcripts}
+\centering\includegraphics[width=0.7\linewidth]{fig_example.pdf}\\[2pt]
+{\scriptsize A\,$\to$\,D\,$\to$\,A\,$\to$\,A chain, first 40 prompts, replies truncated and redacted. Illustrative, not typical: of 37 requests agent 1 refused, agent 2 answered 21; later aligned agents also answered in 7 and re-refused in 14.}
+\end{frame}
+
+\begin{frame}{Q2: framing, not contagion}
+\begin{columns}[T]
+\column{0.5\linewidth}
+\small Same wrapper around a \emph{fixed} peer reply, 200 harmful prompts (refusal rate):\\[6pt]
+\resizebox{\linewidth}{!}{\input{../paper/tables/tab_control.tex}}\\[6pt]
+\begin{itemize}\setlength\itemsep{4pt}
+\item The wrapper alone moves A by $-6$ and D by $+6$ points.
+\item A \emph{refusing} peer lowers refusal in both: \hl{$-14$ (A), $-18$ (D)}.
+\item Eager openers (``Certainly! Here's\ldots'') explain only about a third of the drop.
+\end{itemize}
+\column{0.46\linewidth}
+\textbf{Reading}\\[4pt]
+\small The effect changes how the receiver understands its role. It is \emph{not} contagion of the peer's stance, and the mechanism is only partly explained.\\[8pt]
+\textbf{Lesson}\\[4pt]
+Do not read peer-reply effects as contagion without a framing control.
+\end{columns}
+\end{frame}
+
+\begin{frame}{Q3: the drifted agent still carries the refusal signal}
+\centering\includegraphics[width=0.82\linewidth]{fig_probe_vs_behavior.pdf}\\[2pt]
+\small
+\begin{itemize}\setlength\itemsep{2pt}
+\item D is \emph{scored} as refusing 56\% (about 79\% in a small audit), yet its hidden state flags \hl{92\%} (9\% false alarms, AUC 0.98) and its refusal-opening likelihood flags 91\% (5\%).
+\item An \hl{aligned instance reads the signal equally well} (AUC 0.99): a separate monitor needs no access to D's internals.
+\end{itemize}
+\end{frame}
+
+\begin{frame}{Where monitors break: encodings and splits}
+\begin{itemize}\setlength\itemsep{7pt}
+\item \textbf{base64:} the hidden-state probe falls to chance (AUC 0.53); output likelihood keeps 0.73.
+\item \textbf{rot13:} both near chance (0.47--0.65), and D simply complies (3\% refusal).
+\item \textbf{leetspeak:} AUC 0.72--0.76, but false alarms of 37--94\%.
+\item \textbf{Mechanical split in two fragments:} no evasion gap (swarm-level AUC 0.94--0.99), at the cost of 19--43\% false alarms.
+\item \textbf{Baselines:} keyword (AUC 0.64) and perplexity (0.79) only flag odd text, not harm.
+\end{itemize}
+\vspace{6pt}\small Our split is crude; this does not contradict reports that carefully designed splits evade monitors.
+\end{frame}
+
+\begin{frame}{A check on our own measure: the refusal detector}
+\begin{columns}[T]
+\column{0.5\linewidth}\small
+Audit of 169 plain replies (all unflagged plus 30 flagged per agent), one labeller (a language model), blind to the flag:
+\begin{itemize}\setlength\itemsep{4pt}
+\item Flagged replies: all 60 were real declines.
+\item Declines or redirections: \hl{96\% (A), 79\% (D)} against detector rates of 90\% and 56\%.
+\item So ``answered'' rates are \hl{upper bounds} on harmful delivery, most clearly for D.
+\end{itemize}
+\column{0.46\linewidth}\small
+Chains re-scored with an extended detector:\\[4pt]
+\resizebox{\linewidth}{!}{\input{../paper/tables/tab_rescore.tex}}\\[6pt]
+{\scriptsize Direction holds, size shrinks. Extended phrases were written after reading the labels: a sensitivity check, not a validated measure.}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Limitations and dual use}
+\begin{columns}[T]
+\column{0.5\linewidth}\textbf{Limits}
+\begin{itemize}\small\setlength\itemsep{3pt}
+\item 1.5B models, greedy decoding, one fine-tune on one dataset; a second model family showed no drift in earlier work.
+\item Aggregation is simulated from identical copies.
+\item Monitors share a model family with the agents.
+\item Substring detector; single non-human labeller for the audit.
+\item No hosted models, adversarial coordination or careful splits.
+\end{itemize}
+\column{0.46\linewidth}\textbf{Dual use}
+\begin{itemize}\small\setlength\itemsep{3pt}
+\item Public benchmark prompts and public encodings only; reply text not published.
+\item ``Route to the weakest member'' is a design warning: do not let requesters pick agents, require agreement, monitor with a separate aligned instance.
+\item That simple encodings defeat the probe helps attackers a little and defenders choosing monitors more.
+\end{itemize}
+\end{columns}
+\end{frame}
+
+\begin{frame}{Takeaways}
+\begin{enumerate}\setlength\itemsep{8pt}
+\item \textbf{Aggregation rules matter as much as how many agents drifted.} If requesters can choose agents, one drifted member is as bad as all of them.
+\item \textbf{Drift is replicable} (recipes can be copied), so one weak agent can appear several times in a swarm.
+\item \textbf{A drifted agent still carries the refusal signal,} and an aligned monitor reads it, but only while messages look like ordinary text.
+\item \textbf{Measure before you interpret:} a framing control and a detector audit each changed a headline.
+\end{enumerate}
+\vspace{6pt}
+\textbf{Next:} hosted and larger models, human labels, sampled decoding and heterogeneous agents, adversarial coordination.
+\end{frame}
+
+\begin{frame}{Code, paper, references}
+\small
+\textbf{Code:} \texttt{github.com/empeje/lexsi-ai-hackathon}, branch \texttt{apart/swarm-alignment-2026}, folder \texttt{swarm/}\\
+\textbf{Paper:} \texttt{swarm/paper/main.pdf} and \texttt{main\_apart.pdf} (Apart template layout)\\[8pt]
+\textbf{Preexisting vs new.} Models, drift recipe, prompts and refusal detector come from our earlier study (Mappuji 2026, Zenodo, doi:10.5281/zenodo.24040671); the chain, control, monitor and audit experiments and all figures were produced during the sprint.\\[8pt]
+\textbf{Builds on} Hammond et al.\ 2025; Motwani et al.\ 2024; Lee \& Tiwari 2024; Qi et al.\ 2023; Arditi et al.\ 2024; Greenblatt et al.\ 2024.
+\end{frame}
+\end{document}

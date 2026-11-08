@@ -56,7 +56,7 @@ Data (public GitHub mirrors, not committed): AdvBench `llm-attacks/llm-attacks`,
 
 ## Project 2: Benign drift as a swarm's weak link (Apart Swarm Alignment Sprint 2026, Track 2)
 
-Paper: [`swarm/paper/main.pdf`](swarm/paper/main.pdf) (compact) and [`swarm/paper/main_apart.pdf`](swarm/paper/main_apart.pdf) (Apart template layout). Details and run order: [`swarm/README.md`](swarm/README.md).
+Paper: [`swarm/paper/main.pdf`](swarm/paper/main.pdf) (compact) and [`swarm/paper/main_apart.pdf`](swarm/paper/main_apart.pdf) (Apart template layout). Slides: [`swarm/slides/slides.pdf`](swarm/slides/slides.pdf). Details and run order: [`swarm/README.md`](swarm/README.md).
 
 ### Abstract
 A swarm of language-model agents is only as safe as the agents it routes requests to. Most swarm-safety work assumes an adversarial member. This project studies a quieter weak link: an agent fine-tuned on a harmless task (grade-school maths) that lost part of its refusal behaviour without anyone intending it. Using Qwen2.5-1.5B-Instruct as the aligned agent and a LoRA-drifted copy as the weak one, it asks three questions. How does such an agent change group safety under simple routing and voting rules? Do drifted agents spread or absorb refusal through shared context? And what does a drifted agent still represent about harmful requests, and can a monitor read it?
