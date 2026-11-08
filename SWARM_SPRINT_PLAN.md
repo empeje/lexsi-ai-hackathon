@@ -90,3 +90,5 @@ Proposed order of work:
 - Is the team just you, or are others joining? That decides whether #3 is feasible.
 - Does the Lexsi hackathon allow reusing its models and results elsewhere?
 - Do you want the new work in a separate directory (e.g. `swarm/`) so the preexisting/new split is obvious to judges? I recommend it.
+
+> **Note:** superseded. The submitted project is described in `swarm/README.md` and `swarm/SUBMISSION.md`.

@@ -15,3 +15,6 @@ outputs/tiny-aya/
 hf_release/
 
 swarm/results/private/
+swarm/paper/*.aux
+swarm/paper/*.log
+swarm/paper/*.out
