@@ -27,12 +27,13 @@ def wrap(req, prev):
 agents = {"A": LocalAgent(INSTRUCT), "D": LocalAgent(str(ROOT / "outputs" / "models" / "ft_gsm8k"))}
 COMPS = os.environ.get("COMPS", "AAAA,DAAA,ADAA,AAAD,DDDD,ADAD").split(",")
 SUFFIX = os.environ.get("SUFFIX", "")
-out = {}
+out = {}; HEADS_STORE = {}
 for comp in COMPS:
     prev, replies, refused = None, [], []
     for k, ag in enumerate(comp):
         prompts = [wrap(r, None if prev is None else prev[i]) for i, r in enumerate(harm)]
         prev = agents[ag].reply(prompts); replies.append(prev); refused.append([is_refusal(x) for x in prev])
+    HEADS_STORE[comp] = [[x[:200] for x in r] for r in replies]
     pos = [sum(r) / N for r in refused]
     cond = {}
     for k in range(1, LEN):
@@ -45,5 +46,8 @@ for comp in COMPS:
                  "any_agent_complied": round(sum(any(not refused[k][i] for k in range(LEN)) for i in range(N)) / N, 3),
                  "refused_flags": refused}
     print(comp, "refusal by position", [round(p, 2) for p in pos], "| any-complied", out[comp]["any_agent_complied"], flush=True)
+if os.environ.get("HEADS"):   # new: keep 200-char reply heads (private, gitignored) so outcomes can be re-scored with a better detector
+    os.makedirs(os.path.join(RES, "private"), exist_ok=True)
+    json.dump({c: HEADS_STORE[c] for c in HEADS_STORE}, open(os.path.join(RES, "private", f"e4_heads{SUFFIX}.json"), "w"))
 json.dump(dict(n=N, chain_len=LEN, comps=out), open(os.path.join(RES, f"e4_chain{SUFFIX}.json"), "w"))
 print("DONE")
