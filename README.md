@@ -1,5 +1,16 @@
 # Safety drift in small fine-tuned language models: two hackathon projects
 
+## Contents
+- [The two projects](#the-two-projects)
+- [Project 1: SafeTune drift-repair (Lexsi hackathon, Track 2b)](#project-1-safetune-drift-repair-lexsi-hackathon-track-2b)
+  - [Caveats](#caveats)
+- [Project 2: Benign drift as a swarm's weak link (Apart Swarm Alignment Sprint 2026, Track 2)](#project-2-benign-drift-as-a-swarms-weak-link-apart-swarm-alignment-sprint-2026-track-2)
+  - [Abstract](#abstract)
+  - [Key results](#key-results)
+  - [Limits and how to reproduce](#limits-and-how-to-reproduce)
+
+## The two projects
+
 This repository holds two separate pieces of work on the same setup (Qwen2.5-1.5B-Instruct, benign GSM8K LoRA drift, SafeTune, refusal-direction analysis).
 
 | | Project | Where | Paper | Hackathon |
@@ -45,4 +56,16 @@ Data (public GitHub mirrors, not committed): AdvBench `llm-attacks/llm-attacks`,
 
 ## Project 2: Benign drift as a swarm's weak link (Apart Swarm Alignment Sprint 2026, Track 2)
 
-See [`swarm/README.md`](swarm/README.md). In short: an aggregation analysis over pools of aligned and drifted agents, live four-agent chains with a framing control, and a comparison of refusal-direction and output-likelihood monitors under encodings and splits. Build the paper with `cd swarm/paper && pdflatex main && pdflatex main`.
+Paper: [`swarm/paper/main.pdf`](swarm/paper/main.pdf) (compact) and [`swarm/paper/main_apart.pdf`](swarm/paper/main_apart.pdf) (Apart template layout). Details and run order: [`swarm/README.md`](swarm/README.md).
+
+### Abstract
+A swarm of language-model agents is only as safe as the agents it routes requests to. Most swarm-safety work assumes an adversarial member. This project studies a quieter weak link: an agent fine-tuned on a harmless task (grade-school maths) that lost part of its refusal behaviour without anyone intending it. Using Qwen2.5-1.5B-Instruct as the aligned agent and a LoRA-drifted copy as the weak one, it asks three questions. How does such an agent change group safety under simple routing and voting rules? Do drifted agents spread or absorb refusal through shared context? And what does a drifted agent still represent about harmful requests, and can a monitor read it?
+
+### Key results
+- **Aggregation.** If a requester can try every agent, one drifted agent in a pool of five raises the share of harmful requests answered from 6.5% to 41%. Majority voting holds until three agents have drifted.
+- **Chains.** In live four-agent chains, one drifted agent raises the share answered by some agent from 31% to 52-56% (30% to 44-45% under a detector that also catches soft deflections), with small further increases for more drifted agents.
+- **Framing, not contagion.** A controlled test finds that a refusing peer reply lowers refusal by 14-18 points, which we attribute partly to prompt framing.
+- **Monitors.** The drifted agent is scored as refusing 56% of harmful requests (about 79% in a small audit), yet its hidden states and output likelihoods flag 91-92% of them at 5-9% false alarms, and an aligned instance reads the signal equally well. Simple encodings defeat the hidden-state probe at base64 and both readouts at rot13.
+
+### Limits and how to reproduce
+Everything uses 1.5B models, greedy decoding and a coarse refusal detector, so the results are a design warning and a measurement recipe, not a guarantee for larger systems. Hosted models and adversarial coordination were not tested. Only public benchmark prompts are used, and reply text is not published. Models, drift recipe, prompts and the refusal detector come from project 1 and are marked preexisting; everything in `swarm/` is new. To reproduce, follow the run order in [`swarm/README.md`](swarm/README.md) and build a paper with `cd swarm/paper && pdflatex main && pdflatex main`.
