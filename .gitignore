@@ -18,3 +18,4 @@ swarm/results/private/
 swarm/paper/*.aux
 swarm/paper/*.log
 swarm/paper/*.out
+.DS_Store
