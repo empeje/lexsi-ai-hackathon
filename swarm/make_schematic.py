@@ -32,7 +32,7 @@ arrow(ax, (0.5, 0.80), (0.5, 0.72))
 # (c) monitor
 ax = axes[2]; ax.text(0, 0.98, "(c) What a monitor can read", fontsize=10.5, fontweight="bold", color=INK, va="top")
 box(ax, 0.02, 0.76, 0.96, 0.13, "request (plain, spaced, leet,\nbase64, rot13, split in two)", fs=7.8)
-box(ax, 0.02, 0.50, 0.96, 0.15, "Drifted agent D\nrefuses 56%, still carries signal", D, 7.8)
+box(ax, 0.02, 0.50, 0.96, 0.15, "Drifted agent D\nscored refusing 56%,\nstill carries signal", D, 7.8)
 arrow(ax, (0.5, 0.76), (0.5, 0.65))
 box(ax, 0.02, 0.22, 0.46, 0.17, "probe on hidden\nstate (layer 14)", fs=7.6); box(ax, 0.52, 0.22, 0.46, 0.17, "likelihood of\na refusal opening", fs=7.6)
 arrow(ax, (0.3, 0.50), (0.25, 0.39)); arrow(ax, (0.7, 0.50), (0.75, 0.39))
